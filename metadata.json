@@ -2,7 +2,8 @@
   "name": "Remix:  Predial 4.0 (versão final)",
   "description": "An interactive building maintenance plan application, providing AI-powered assistants for image diagnosis, inspection checklists, technical diagnostics, and maintenance scheduling.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "geolocation"
   ],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

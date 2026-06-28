@@ -324,7 +324,15 @@
                   </div>
 
                   <!-- Badge do Status Atual -->
-                  <div>
+                  <div class="flex items-center gap-2">
+                    @if (itemSalvoFeedback() === item.id) {
+                      <span class="inline-flex items-center gap-1 text-emerald-600 text-[10px] font-extrabold animate-pulse bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        ✓ SALVO
+                      </span>
+                    }
                     @if (item.status === 'PENDENTE') {
                       <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 font-bold text-[10px] px-2.5 py-1 rounded-full uppercase border border-amber-200">
                         <span class="w-1 h-1 bg-amber-600 rounded-full animate-ping"></span>
@@ -376,26 +384,10 @@
 
                 <!-- Painel Extra se Falha (FAIL) -->
                 @if (item.status === 'NAO_CONFORME' || item.status === 'FAIL') {
-                  <div class="mt-4 p-4 border border-rose-200 rounded-lg bg-rose-50/40 space-y-3.5">
-                    <div class="flex items-center gap-3">
-                      <span class="text-xs font-bold text-rose-800 uppercase tracking-wide">Grau de Criticidade:</span>
-                      <div class="flex gap-2">
-                        @for (gravidade of ['Mínimo', 'Regular', 'Crítico']; track gravidade) {
-                          <button (click)="alterarGravidadeItem(item.id, $any(gravidade))"
-                                  [class]="'px-2.5 py-1 text-[10px] font-extrabold rounded-md uppercase border transition-all ' + 
-                                           (item.severity === gravidade ? 
-                                             (gravidade === 'Mínimo' ? 'bg-amber-100 text-amber-800 border-amber-300' : 
-                                              gravidade === 'Regular' ? 'bg-orange-100 text-orange-800 border-orange-300' : 
-                                                                     'bg-rose-100 text-rose-800 border-rose-300') : 
-                                             'bg-white text-slate-500 border-slate-200 hover:bg-slate-50')">
-                            {{ gravidade }}
-                          </button>
-                        }
-                      </div>
-                    </div>
-
-                    <!-- Seção de Evidências Fotográficas e Diagnóstico IA -->
-                    <div class="pt-2.5 border-t border-rose-100 flex flex-col gap-2.5">
+                  <div class="mt-4 p-4 border border-rose-200 rounded-lg bg-rose-50/40 space-y-4">
+                    
+                    <!-- (1º) Bloco de EVIDÊNCIA FOTOGRÁFICA -->
+                    <div class="flex flex-col gap-2.5">
                       <div class="flex flex-wrap items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                           <button type="button" (click)="abrirCaptura(item, 'contexto')"
@@ -435,6 +427,36 @@
                         </div>
                       }
                     </div>
+
+                    <!-- (2º) Bloco de GRAU DE CRITICIDADE -->
+                    <div class="pt-3 border-t border-rose-100/60 flex flex-col gap-2.5">
+                      @if (!item.id_evidencias?.length && !item.severity) {
+                        <p class="text-[10px] text-slate-500 italic flex items-center gap-1.5">
+                          <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                          </svg>
+                          Dica: tire uma foto acima para a IA sugerir o grau — ou classifique manualmente.
+                        </p>
+                      }
+
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold text-rose-800 uppercase tracking-wide">Grau de Criticidade:</span>
+                        <div class="flex gap-2">
+                          @for (gravidade of ['Mínimo', 'Regular', 'Crítico']; track gravidade) {
+                            <button (click)="alterarGravidadeItem(item.id, $any(gravidade))"
+                                    [class]="'px-2.5 py-1 text-[10px] font-extrabold rounded-md uppercase border transition-all cursor-pointer ' + 
+                                             (item.severity === gravidade ? 
+                                               (gravidade === 'Mínimo' ? 'bg-amber-100 text-amber-800 border-amber-300' : 
+                                                gravidade === 'Regular' ? 'bg-orange-100 text-orange-800 border-orange-300' : 
+                                                                       'bg-rose-100 text-rose-800 border-rose-300') : 
+                                               'bg-white text-slate-500 border-slate-200 hover:bg-slate-50')">
+                              {{ gravidade }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 }
 
@@ -523,9 +545,40 @@
         </button>
       </div>
 
-      <!-- Área do Vídeo / Preview -->
-      <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
-        @if (streamCamera()) {
+      <!-- Área do Vídeo / Preview / Upload -->
+      <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden"
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave($event)"
+           (drop)="onDrop($event)">
+        
+        <!-- Alternar para upload se desejado -->
+        @if (!cameraIndisponivel() && !capturando() && !analisandoIa()) {
+          <button type="button" (click)="cameraIndisponivel.set(true); camera.parar(); streamCamera.set(null)"
+                  class="absolute top-3 right-3 px-2 py-1 bg-slate-900/80 hover:bg-slate-900 text-white text-[10px] font-bold rounded-lg uppercase tracking-wide flex items-center gap-1 transition-colors cursor-pointer backdrop-blur-sm z-10">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/>
+            </svg>
+            <span>Enviar Arquivo</span>
+          </button>
+        }
+
+        @if (cameraIndisponivel()) {
+          <!-- Fallback de Drag & Drop / File Select -->
+          <div class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center p-6 text-center transition-all cursor-pointer"
+               [class.bg-slate-800]="dragOver()"
+               (click)="fileInput.click()">
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" class="hidden" />
+            
+            <div class="w-12 h-12 rounded-full bg-slate-800/80 text-rose-500 flex items-center justify-center mb-3 transition-transform">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/>
+              </svg>
+            </div>
+            
+            <p class="text-xs font-bold text-slate-200">Arraste a foto da evidência ou clique aqui</p>
+            <p class="text-[10px] text-slate-400 mt-1">Suporta imagens JPEG, PNG, WEBP</p>
+          </div>
+        } @else if (streamCamera()) {
           <video autoplay playsinline [srcObject]="streamCamera()" class="w-full h-full object-cover"></video>
         } @else {
           <div class="text-center p-6 space-y-2">
@@ -536,7 +589,7 @@
 
         <!-- Overlays de Estado -->
         @if (capturando()) {
-          <div class="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center gap-3 backdrop-blur-[2px]">
+          <div class="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center gap-3 backdrop-blur-[2px] z-20">
             <div class="p-3 bg-white/10 rounded-full animate-pulse text-white">
               <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
@@ -547,7 +600,7 @@
         }
 
         @if (analisandoIa()) {
-          <div class="absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center gap-3 backdrop-blur-[3px]">
+          <div class="absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center gap-3 backdrop-blur-[3px] z-20">
             <div class="flex items-center gap-1">
               <span class="w-3.5 h-3.5 bg-rose-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
               <span class="w-3.5 h-3.5 bg-rose-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
@@ -565,14 +618,24 @@
           Cancelar
         </button>
         
-        <button type="button" (click)="capturarEAnalisar()" [disabled]="!streamCamera() || capturando() || analisandoIa()"
-                class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center gap-2 disabled:bg-slate-400 disabled:cursor-not-allowed cursor-pointer">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/>
-          </svg>
-          <span>Bater Foto & Analisar</span>
-        </button>
+        @if (!cameraIndisponivel()) {
+          <button type="button" (click)="capturarEAnalisar()" [disabled]="!streamCamera() || capturando() || analisandoIa()"
+                  class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center gap-2 disabled:bg-slate-400 disabled:cursor-not-allowed cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/>
+            </svg>
+            <span>Bater Foto & Analisar</span>
+          </button>
+        } @else {
+          <button type="button" (click)="fileInput.click()" [disabled]="capturando() || analisandoIa()"
+                  class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center gap-2 disabled:bg-slate-400 disabled:cursor-not-allowed cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/>
+            </svg>
+            <span>Selecionar Foto & Analisar</span>
+          </button>
+        }
       </div>
 
     </div>

@@ -70,6 +70,18 @@ export class ChecklistInspecaoComponent implements OnInit {
   tipoEvidencia = signal<'contexto' | 'detalhe'>('contexto');
   capturando = signal(false);
   analisandoIa = signal(false);
+  cameraIndisponivel = signal(false);
+  dragOver = signal(false);
+  itemSalvoFeedback = signal<string | null>(null);
+
+  private sinalizarSalvo(itemId: string): void {
+    this.itemSalvoFeedback.set(itemId);
+    setTimeout(() => {
+      if (this.itemSalvoFeedback() === itemId) {
+        this.itemSalvoFeedback.set(null);
+      }
+    }, 2000);
+  }
 
   // Estado do formulário de criação
   novoBuildingName = signal('');
@@ -425,6 +437,7 @@ export class ChecklistInspecaoComponent implements OnInit {
     });
 
     this.atualizarItensVistoriaAtiva(novosItens);
+    this.sinalizarSalvo(itemId);
   }
 
   alterarGravidadeItem(itemId: string, novaGravidade: 'Mínimo' | 'Regular' | 'Crítico'): void {
@@ -439,18 +452,20 @@ export class ChecklistInspecaoComponent implements OnInit {
     });
 
     this.atualizarItensVistoriaAtiva(novosItens);
+    this.sinalizarSalvo(itemId);
   }
 
   async abrirCaptura(item: ChecklistItem, tipo: 'contexto'|'detalhe'): Promise<void> {
     this.tipoEvidencia.set(tipo);
     this.itemCapturandoEvidencia.set(item);
+    this.cameraIndisponivel.set(false);
     try {
       const stream = await this.camera.iniciar(true);
       this.streamCamera.set(stream);
     } catch (e) {
       console.error('Erro ao abrir câmera', e);
-      this.toastService.show('Câmera indisponível ou permissão negada.', 'error');
-      this.fecharCaptura();
+      this.cameraIndisponivel.set(true);
+      this.toastService.show('Câmera indisponível. Utilize a seleção de arquivos para anexar a evidência.', 'info');
     }
   }
 
@@ -460,6 +475,87 @@ export class ChecklistInspecaoComponent implements OnInit {
     this.itemCapturandoEvidencia.set(null);
     this.capturando.set(false);
     this.analisandoIa.set(false);
+    this.cameraIndisponivel.set(false);
+    this.dragOver.set(false);
+  }
+
+  async processarArquivoSelecionado(file: File): Promise<void> {
+    if (!file.type.startsWith('image/')) {
+      this.toastService.show('Por favor, selecione um arquivo de imagem válido.', 'error');
+      return;
+    }
+
+    const item = this.itemCapturandoEvidencia();
+    if (!item) return;
+
+    this.capturando.set(true);
+
+    try {
+      const blob = new Blob([file], { type: file.type });
+      const geo = await this.camera.obterLocalizacao();
+      const idEvidencia = crypto.randomUUID();
+
+      const ev: Evidencia = {
+        id: idEvidencia,
+        blob,
+        mimeType: file.type,
+        tipo: this.tipoEvidencia(),
+        geo,
+        timestamp: new Date().toISOString(),
+        id_item: item.id
+      };
+
+      await this.dbService.saveEvidencia(ev);
+
+      const novas = [...(item.id_evidencias ?? []), idEvidencia];
+      this.aplicarMudancaNoItem(item.id, it => ({ ...it, id_evidencias: novas }));
+
+      this.capturando.set(false);
+      this.analisandoIa.set(true);
+
+      const base64 = await this.blobParaBase64(blob);
+      const diag = await this.analisarComGemini(item, base64);
+
+      if (diag?.texto) {
+        this.aplicarMudancaNoItem(item.id, it => ({ ...it, diagnostico_ia: diag.texto }));
+      }
+
+      const itemAtualizado = this.vistoriaAtiva()?.items.find(it => it.id === item.id);
+      if (diag?.severitySugerida && (!itemAtualizado || !itemAtualizado.severity)) {
+        this.alterarGravidadeItem(item.id, diag.severitySugerida);
+      }
+    } catch (e) {
+      console.error('Falha no processamento do arquivo/análise', e);
+      this.toastService.show('Falha ao processar arquivo ou analisar evidência.', 'error');
+    } finally {
+      this.analisandoIa.set(false);
+      this.fecharCaptura();
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      void this.processarArquivoSelecionado(input.files[0]);
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver.set(false);
+    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+      void this.processarArquivoSelecionado(event.dataTransfer.files[0]);
+    }
   }
 
   private aplicarMudancaNoItem(itemId: string, updater: (item: ChecklistItem) => ChecklistItem): void {
@@ -474,6 +570,7 @@ export class ChecklistInspecaoComponent implements OnInit {
     });
 
     this.atualizarItensVistoriaAtiva(novosItens, false);
+    this.sinalizarSalvo(itemId);
   }
 
   private async blobParaBase64(blob: Blob): Promise<string> {
