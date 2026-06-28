@@ -73,6 +73,8 @@ export class ChecklistInspecaoComponent implements OnInit {
   cameraIndisponivel = signal(false);
   dragOver = signal(false);
   itemSalvoFeedback = signal<string | null>(null);
+  itemGaleriaAberta = signal<string | null>(null);
+  evidenciasGaleria = signal<{ url: string; ev: Evidencia }[]>([]);
 
   private sinalizarSalvo(itemId: string): void {
     this.itemSalvoFeedback.set(itemId);
@@ -81,6 +83,36 @@ export class ChecklistInspecaoComponent implements OnInit {
         this.itemSalvoFeedback.set(null);
       }
     }, 2000);
+  }
+
+  async abrirGaleria(item: ChecklistItem): Promise<void> {
+    // Toggle: se já está aberta para este item, fecha e sai.
+    if (this.itemGaleriaAberta() === item.id) {
+      this.fecharGaleria();
+      return;
+    }
+    // Fecha qualquer galeria anterior (libera memória) antes de abrir a nova.
+    this.fecharGaleria();
+
+    const ids = item.id_evidencias ?? [];
+    const carregadas: { url: string; ev: Evidencia }[] = [];
+    for (const id of ids) {
+      const ev = await this.dbService.getEvidencia(id);
+      if (ev) {
+        const url = URL.createObjectURL(ev.blob);
+        carregadas.push({ url, ev });
+      }
+    }
+    this.evidenciasGaleria.set(carregadas);
+    this.itemGaleriaAberta.set(item.id);
+  }
+
+  fecharGaleria(): void {
+    for (const e of this.evidenciasGaleria()) {
+      URL.revokeObjectURL(e.url);
+    }
+    this.evidenciasGaleria.set([]);
+    this.itemGaleriaAberta.set(null);
   }
 
   // Estado do formulário de criação

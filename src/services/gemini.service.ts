@@ -53,14 +53,22 @@ export class GeminiService {
       console.error('API_KEY environment variable not set.');
       throw new Error('API_KEY environment variable not set.');
     }
-    this.ai = new GoogleGenAI({ apiKey });
+    this.ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        baseUrl: 'https://generativelanguage.googleapis.com',
+        headers: {
+          'User-Agent': 'aistudio-build'
+        }
+      }
+    });
   }
 
   async generateText(prompt: string): Promise<string> {
     this.loading.set(true);
     try {
       const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.5-flash',
         contents: prompt,
       });
       return response.text;
@@ -87,7 +95,7 @@ export class GeminiService {
       };
       
       const response: GenerateContentResponse = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.5-flash',
         contents: { parts: [textPart, ...imageParts] },
       });
 
@@ -104,7 +112,7 @@ export class GeminiService {
     this.loading.set(true);
     try {
       const res = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.5-flash',
         contents,
         config: { responseMimeType: 'application/json', responseSchema },
       });

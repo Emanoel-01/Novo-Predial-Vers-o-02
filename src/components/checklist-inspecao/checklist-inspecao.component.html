@@ -409,11 +409,35 @@
                         </div>
 
                         @if (item.id_evidencias?.length) {
-                          <span class="text-[10px] font-semibold text-rose-700 bg-rose-100/60 px-2 py-1 rounded-md">
-                            {{ item.id_evidencias.length }} evidência(s) anexada(s)
-                          </span>
+                          <button type="button" (click)="abrirGaleria(item)"
+                                  class="text-[10px] font-semibold text-rose-700 bg-rose-100/60 px-2 py-1 rounded-md hover:bg-rose-200/60 transition-colors cursor-pointer">
+                            {{ item.id_evidencias.length }} evidência(s) —
+                            {{ itemGaleriaAberta() === item.id ? 'ocultar' : 'ver fotos' }}
+                          </button>
                         }
                       </div>
+
+                      @if (item.id_evidencias?.length && itemGaleriaAberta() === item.id) {
+                        <div class="mt-2 flex flex-col gap-3">
+                          @for (e of evidenciasGaleria(); track e.url) {
+                            <div class="border border-rose-100 rounded-lg overflow-hidden bg-white">
+                              <img [src]="e.url" alt="Evidência fotográfica"
+                                   class="w-full max-h-56 object-contain bg-slate-50" />
+                              <div class="p-2 text-[10px] text-slate-600 space-y-0.5">
+                                <p class="font-semibold uppercase tracking-wide text-rose-700">
+                                  {{ e.ev.tipo === 'contexto' ? 'Contexto' : 'Detalhe' }}
+                                  · {{ e.ev.timestamp | date:'dd/MM/yy HH:mm' }}
+                                </p>
+                                @if (e.ev.geo) {
+                                  <p>📍 {{ e.ev.geo.lat | number:'1.5-5' }}, {{ e.ev.geo.lng | number:'1.5-5' }}@if (e.ev.geo.accuracy) {<span> · ±{{ e.ev.geo.accuracy | number:'1.0-0' }}m</span>}</p>
+                                } @else {
+                                  <p class="text-slate-400 italic">📍 Sem localização</p>
+                                }
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
 
                       @if (item.diagnostico_ia) {
                         <div class="p-3 bg-white border border-rose-100 rounded-lg text-xs space-y-1">

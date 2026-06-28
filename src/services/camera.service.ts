@@ -119,17 +119,18 @@ export class CameraService {
   /**
    * Coordenada atual do GPS; retorna null em caso de erro ou permissão negada (nunca lança erro).
    */
-  async obterLocalizacao(): Promise<{ lat: number; lng: number } | null> {
+  async obterLocalizacao(): Promise<{ lat: number; lng: number; accuracy: number } | null> {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       return null;
     }
 
-    return new Promise<{ lat: number; lng: number } | null>((resolve) => {
+    return new Promise<{ lat: number; lng: number; accuracy: number } | null>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           resolve({
             lat: position.coords.latitude,
-            lng: position.coords.longitude
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy
           });
         },
         (error) => {

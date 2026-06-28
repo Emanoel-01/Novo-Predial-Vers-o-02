@@ -7,7 +7,7 @@ export interface Evidencia {
   blob: Blob;            // a imagem em si (rocha imutável)
   mimeType: string;      // ex.: 'image/jpeg'
   tipo: 'contexto' | 'detalhe';  // contexto = anomalia no ambiente; detalhe = macrofoto
-  geo?: { lat: number; lng: number } | null;
+  geo?: { lat: number; lng: number; accuracy?: number } | null;
   timestamp: string;     // ISO
   id_item: string;       // a qual ChecklistItem pertence
 }
