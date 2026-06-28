@@ -47,6 +47,7 @@ export class ChecklistInspecaoComponent implements OnInit {
   // Vistorias salvas
   vistorias = signal<Vistoria[]>([]);
   vistoriaAtiva = signal<Vistoria | null>(null);
+  vistoriaParaExcluir = signal<Vistoria | null>(null);
 
   // Estado do formulário de criação
   novoBuildingName = signal('');
@@ -147,15 +148,6 @@ export class ChecklistInspecaoComponent implements OnInit {
       taxaConformidade
     };
   });
-
-  constructor() {
-    if (typeof window !== 'undefined' && window.self !== window.top) {
-      window.confirm = (message?: string) => {
-        console.log('Bypass de confirm no iframe do AI Studio para mensagem:', message);
-        return true;
-      };
-    }
-  }
 
   ngOnInit(): void {
     void this.carregarVistorias();
@@ -358,28 +350,37 @@ export class ChecklistInspecaoComponent implements OnInit {
     }
   }
 
-  async excluirVistoria(event: Event, id: string): Promise<void> {
+  excluirVistoria(event: Event, id: string): void {
     event.stopPropagation();
-    console.log('exclusão disparada para vistoria', id);
-    if (!window.confirm('Excluir esta vistoria? Esta ação não pode ser desfeita.')) {
-      return;
+    const vistoria = this.vistorias().find(v => v.id === id);
+    if (vistoria) {
+      this.vistoriaParaExcluir.set(vistoria);
     }
+  }
 
-    // remove da lista em memória
-    this.vistorias.set(this.vistorias().filter(v => v.id !== id));
+  cancelarExclusao(): void {
+    this.vistoriaParaExcluir.set(null);
+  }
 
-    if (this.vistoriaAtiva()?.id === id) {
-      this.vistoriaAtiva.set(null);
-      this.modoExibicao.set('LISTA');
-    }
-
+  async confirmarExclusao(): Promise<void> {
+    const alvo = this.vistoriaParaExcluir();
+    if (!alvo) return;
+    console.log('exclusão confirmada — removendo do IndexedDB', alvo.id);
     try {
-      await this.dbService.deleteVistoria(id);
-      this.toastService.show('Vistoria excluída com sucesso.', 'success');
+      await this.dbService.deleteVistoria(alvo.id);            // 1) DB primeiro
     } catch (e) {
       console.error('Erro ao excluir vistoria do IndexedDB', e);
       this.toastService.show('Erro ao excluir vistoria do banco de dados.', 'error');
+      return;                                                   // aborta sem mexer na lista
     }
+    // 2) só após o sucesso, sincroniza memória/UI
+    this.vistorias.set(this.vistorias().filter(v => v.id !== alvo.id));
+    if (this.vistoriaAtiva()?.id === alvo.id) {
+      this.vistoriaAtiva.set(null);
+      this.modoExibicao.set('LISTA');
+    }
+    this.vistoriaParaExcluir.set(null);
+    this.toastService.show('Vistoria excluída com sucesso.', 'success');
   }
 
   alterarStatusItem(itemId: string, novoStatus: 'PASS' | 'FAIL' | 'NA'): void {
