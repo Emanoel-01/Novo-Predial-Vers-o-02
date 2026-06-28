@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { DataService } from '../../services/data.service';
 import { ToastService } from '../../services/toast.service';
 import { UserProfile } from '../../models/user-profile.model';
-import { registroValido, generateStandardFooter } from '../../services/gemini.service';
-import { VistoriaDbService } from '../../services/vistoria-db.service';
+import { registroValido, generateStandardFooter, GeminiService } from '../../services/gemini.service';
+import { VistoriaDbService, Evidencia } from '../../services/vistoria-db.service';
+import { CameraService } from '../../services/camera.service';
+import { Type } from '@google/genai';
 
 export interface ChecklistItem {
   id: string;
@@ -15,6 +17,8 @@ export interface ChecklistItem {
   status: 'PENDENTE' | 'PASS' | 'FAIL' | 'NA' | 'CONFORME' | 'NAO_CONFORME' | 'NAO_APLICAVEL';
   severity?: 'Mínimo' | 'Regular' | 'Crítico';
   notes: string;
+  id_evidencias?: string[];   // chaves das fotos no store 'evidencias'
+  diagnostico_ia?: string;    // texto do diagnóstico gerado pela IA
 }
 
 export interface Vistoria {
@@ -27,6 +31,15 @@ export interface Vistoria {
   items: ChecklistItem[];
 }
 
+const SCHEMA_ANALISE_EVIDENCIA = {
+  type: Type.OBJECT,
+  properties: {
+    texto: { type: Type.STRING },
+    severitySugerida: { type: Type.STRING, enum: ['Mínimo', 'Regular', 'Crítico'] },
+  },
+  required: ['texto', 'severitySugerida'],
+};
+
 @Component({
   selector: 'app-checklist-inspecao',
   templateUrl: './checklist-inspecao.component.html',
@@ -37,6 +50,8 @@ export class ChecklistInspecaoComponent implements OnInit {
   private dataService = inject(DataService);
   private toastService = inject(ToastService);
   private dbService = inject(VistoriaDbService);
+  private camera = inject(CameraService);
+  private geminiService = inject(GeminiService);
 
   // Controle de carregamento das vistorias
   carregandoVistorias = signal(true);
@@ -48,6 +63,13 @@ export class ChecklistInspecaoComponent implements OnInit {
   vistorias = signal<Vistoria[]>([]);
   vistoriaAtiva = signal<Vistoria | null>(null);
   vistoriaParaExcluir = signal<Vistoria | null>(null);
+
+  // Estado para captura de evidência e IA
+  itemCapturandoEvidencia = signal<ChecklistItem | null>(null);
+  streamCamera = signal<MediaStream | null>(null);
+  tipoEvidencia = signal<'contexto' | 'detalhe'>('contexto');
+  capturando = signal(false);
+  analisandoIa = signal(false);
 
   // Estado do formulário de criação
   novoBuildingName = signal('');
@@ -417,6 +439,142 @@ export class ChecklistInspecaoComponent implements OnInit {
     });
 
     this.atualizarItensVistoriaAtiva(novosItens);
+  }
+
+  async abrirCaptura(item: ChecklistItem, tipo: 'contexto'|'detalhe'): Promise<void> {
+    this.tipoEvidencia.set(tipo);
+    this.itemCapturandoEvidencia.set(item);
+    try {
+      const stream = await this.camera.iniciar(true);
+      this.streamCamera.set(stream);
+    } catch (e) {
+      console.error('Erro ao abrir câmera', e);
+      this.toastService.show('Câmera indisponível ou permissão negada.', 'error');
+      this.fecharCaptura();
+    }
+  }
+
+  fecharCaptura(): void {
+    this.camera.parar();
+    this.streamCamera.set(null);
+    this.itemCapturandoEvidencia.set(null);
+    this.capturando.set(false);
+    this.analisandoIa.set(false);
+  }
+
+  private aplicarMudancaNoItem(itemId: string, updater: (item: ChecklistItem) => ChecklistItem): void {
+    const ativa = this.vistoriaAtiva();
+    if (!ativa) return;
+
+    const novosItens = ativa.items.map(item => {
+      if (item.id === itemId) {
+        return updater(item);
+      }
+      return item;
+    });
+
+    this.atualizarItensVistoriaAtiva(novosItens, false);
+  }
+
+  private async blobParaBase64(blob: Blob): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  private async analisarComGemini(
+    item: ChecklistItem,
+    base64: string
+  ): Promise<{ texto: string; severitySugerida?: 'Mínimo' | 'Regular' | 'Crítico' } | null> {
+    try {
+      const prompt = `Você é um engenheiro civil perito especializado em inspeção predial de acordo com a NBR 16747.
+Analise a imagem de evidência fornecida para o seguinte item de checklist que apresentou não conformidade / falha:
+- Sistema: ${item.systemTitle}
+- Tipologia: ${item.typologyTitle}
+- Item: ${item.title}
+- Descrição detalhada: ${item.description}
+
+Com base na imagem e no contexto do item falho, forneça:
+1. Diagnóstico técnico detalhado e conciso explicando a causa provável e impacto da anomalia identificada.
+2. O grau de risco sugerido conforme a NBR 16747 (deve ser estritamente 'Mínimo', 'Regular' ou 'Crítico').`;
+
+      const textPart = { text: prompt };
+      const imagePart = {
+        inlineData: {
+          data: base64,
+          mimeType: 'image/jpeg',
+        },
+      };
+      const contents = { parts: [textPart, imagePart] };
+
+      const result = await this.geminiService.generateStructured<{
+        texto: string;
+        severitySugerida: 'Mínimo' | 'Regular' | 'Crítico';
+      }>(contents, SCHEMA_ANALISE_EVIDENCIA);
+
+      return {
+        texto: result.texto,
+        severitySugerida: result.severitySugerida,
+      };
+    } catch (e) {
+      console.error('Erro na chamada do Gemini:', e);
+      return null;
+    }
+  }
+
+  async capturarEAnalisar(): Promise<void> {
+    const item = this.itemCapturandoEvidencia();
+    if (!item) return;
+    this.capturando.set(true);
+
+    try {
+      const blob = await this.camera.capturarBlob();
+      const geo = await this.camera.obterLocalizacao();
+      const idEvidencia = crypto.randomUUID();
+
+      const ev: Evidencia = {
+        id: idEvidencia,
+        blob,
+        mimeType: 'image/jpeg',
+        tipo: this.tipoEvidencia(),
+        geo,
+        timestamp: new Date().toISOString(),
+        id_item: item.id
+      };
+
+      await this.dbService.saveEvidencia(ev);
+
+      const novas = [...(item.id_evidencias ?? []), idEvidencia];
+      this.aplicarMudancaNoItem(item.id, it => ({ ...it, id_evidencias: novas }));
+
+      this.capturando.set(false);
+      this.analisandoIa.set(true);
+
+      const base64 = await this.blobParaBase64(blob);
+      const diag = await this.analisarComGemini(item, base64);
+
+      if (diag?.texto) {
+        this.aplicarMudancaNoItem(item.id, it => ({ ...it, diagnostico_ia: diag.texto }));
+      }
+
+      const itemAtualizado = this.vistoriaAtiva()?.items.find(it => it.id === item.id);
+      if (diag?.severitySugerida && (!itemAtualizado || !itemAtualizado.severity)) {
+        this.alterarGravidadeItem(item.id, diag.severitySugerida);
+      }
+    } catch (e) {
+      console.error('Falha na captura/análise de evidência', e);
+      this.toastService.show('Falha ao capturar ou analisar a evidência.', 'error');
+    } finally {
+      this.analisandoIa.set(false);
+      this.fecharCaptura();
+    }
   }
 
   atualizarNotasItem(itemId: string, event: Event): void {

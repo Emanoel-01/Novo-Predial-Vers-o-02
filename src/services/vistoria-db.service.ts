@@ -2,15 +2,29 @@ import { Injectable } from '@angular/core';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { Vistoria } from '../components/checklist-inspecao/checklist-inspecao.component';
 
+export interface Evidencia {
+  id: string;            // uuid gerado na captura
+  blob: Blob;            // a imagem em si (rocha imutável)
+  mimeType: string;      // ex.: 'image/jpeg'
+  tipo: 'contexto' | 'detalhe';  // contexto = anomalia no ambiente; detalhe = macrofoto
+  geo?: { lat: number; lng: number } | null;
+  timestamp: string;     // ISO
+  id_item: string;       // a qual ChecklistItem pertence
+}
+
 interface Predial4DB extends DBSchema {
   vistorias: {
     key: string;      // Vistoria.id
     value: Vistoria;
   };
+  evidencias: {
+    key: string;      // Evidencia.id
+    value: Evidencia;
+  };
 }
 
 const DB_NAME = 'predial4-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 @Injectable({ providedIn: 'root' })
 export class VistoriaDbService {
@@ -22,6 +36,9 @@ export class VistoriaDbService {
         // Estrutura preparada para versões futuras (ex.: store 'evidencias' p/ fotos na v2)
         if (oldVersion < 1) {
           db.createObjectStore('vistorias', { keyPath: 'id' });
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore('evidencias', { keyPath: 'id' });
         }
       },
     });
@@ -41,6 +58,21 @@ export class VistoriaDbService {
   async deleteVistoria(id: string): Promise<void> {
     const db = await this.dbPromise;
     await db.delete('vistorias', id);
+  }
+
+  async saveEvidencia(ev: Evidencia): Promise<void> {
+    const db = await this.dbPromise;
+    await db.put('evidencias', ev);
+  }
+
+  async getEvidencia(id: string): Promise<Evidencia | undefined> {
+    const db = await this.dbPromise;
+    return db.get('evidencias', id);
+  }
+
+  async deleteEvidencia(id: string): Promise<void> {
+    const db = await this.dbPromise;
+    await db.delete('evidencias', id);
   }
 
   async count(): Promise<number> {
