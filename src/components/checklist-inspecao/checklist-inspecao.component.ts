@@ -20,6 +20,7 @@ export interface ChecklistItem {
   id_evidencias?: string[];   // chaves das fotos no store 'evidencias'
   diagnostico_ia?: string;    // texto do diagnóstico gerado pela IA
   quantitativo?: string;      // medição/quantitativo verificado em campo pelo RT
+  memorialDescritivo?: string; // plano de ação + memorial descritivo gerado pela IA (Seção 9)
 }
 
 export interface Vistoria {
@@ -77,6 +78,7 @@ export class ChecklistInspecaoComponent implements OnInit {
   tipoEvidencia = signal<'contexto' | 'detalhe'>('contexto');
   capturando = signal(false);
   analisandoIa = signal(false);
+  gerandoMemorialId = signal<string | null>(null);
   cameraIndisponivel = signal(false);
   dragOver = signal(false);
   itemSalvoFeedback = signal<string | null>(null);
@@ -627,6 +629,62 @@ export class ChecklistInspecaoComponent implements OnInit {
     }
   }
 
+  async gerarMemorialItem(item: ChecklistItem): Promise<void> {
+    const ativa = this.vistoriaAtiva();
+    if (!ativa) return;
+
+    this.gerandoMemorialId.set(item.id);
+
+    const prompt = `Você é um engenheiro civil perito em manutenção e patologia predial, especialista em inspeção conforme ABNT NBR 16747 e ABNT NBR 5674.
+
+Com base nas evidências coletadas em campo para o item abaixo, redija o Memorial Descritivo de Intervenção em português técnico do Brasil.
+
+===== DADOS DO ITEM DE INSPEÇÃO =====
+Edificação: ${ativa.buildingName}
+Sistema Construtivo: ${item.systemTitle}
+Tipologia: ${item.typologyTitle}
+Item de Inspeção: ${item.title}
+Grau de Risco (NBR 16747): ${item.severity ?? 'Não classificado'}
+Quantitativo Verificado em Campo: ${item.quantitativo?.trim() || 'Não informado — use estimativa técnica proporcional'}
+
+===== DIAGNÓSTICO TÉCNICO DE CAMPO =====
+${item.diagnostico_ia?.trim() || 'Diagnóstico não gerado para este item.'}
+
+===== ANOTAÇÃO DO RESPONSÁVEL TÉCNICO =====
+${item.notes?.trim() || 'Sem anotação de campo.'}
+
+===== ESTRUTURA OBRIGATÓRIA DO MEMORIAL =====
+
+Redija exatamente os 5 blocos abaixo. Use Markdown: títulos com ** e listas com -.
+
+**1. DIAGNÓSTICO TÉCNICO**
+Com base nas evidências registradas em campo (fotografias, diagnóstico assistido por IA e anotações do Responsável Técnico), descreva a causa raiz confirmada e seu mecanismo de degradação. Esta é uma CONFIRMAÇÃO — não oriente investigação, a causa já está identificada.
+
+**2. AÇÕES CORRETIVAS**
+Procedimento de reparo passo a passo. Cada bloco de procedimento deve indicar expressamente a Classe de Ação conforme ABNT NBR 5674: "Imediata", "Necessária" ou "Preventiva". Dimensione os serviços usando o quantitativo de campo informado acima.
+
+**3. ESPECIFICAÇÕES TÉCNICAS — CADERNO DE ENCARGOS**
+Materiais a utilizar (com normas técnicas aplicáveis), tolerâncias de execução, controles de qualidade e critérios de aceitação para os serviços prescritos.
+
+**4. MEDIDAS PREVENTIVAS**
+Ações de manutenção periódica e inspeções recomendadas para evitar reincidência após o reparo.
+
+**5. SEGURANÇA NA EXECUÇÃO**
+EPIs obrigatórios, isolamento de área, condicionantes ambientais e cuidados específicos para este tipo de serviço.`;
+
+    try {
+      const resposta = await this.geminiService.generateText(prompt);
+      const memorial = this.geminiService.sanitizeAiText(resposta);
+      this.aplicarMudancaNoItem(item.id, it => ({ ...it, memorialDescritivo: memorial }));
+      this.toastService.show('Memorial descritivo gerado. Revise antes de emitir o RTIPA.', 'success');
+    } catch (error) {
+      console.error('Erro ao gerar memorial descritivo:', error);
+      this.toastService.show('Não foi possível gerar o memorial. Tente novamente.', 'error');
+    } finally {
+      this.gerandoMemorialId.set(null);
+    }
+  }
+
   private aplicarMudancaNoItem(itemId: string, updater: (item: ChecklistItem) => ChecklistItem): void {
     const ativa = this.vistoriaAtiva();
     if (!ativa) return;
@@ -910,6 +968,7 @@ Com base na imagem e no contexto do item falho, forneça:
     }
 
     const secao7 = this.gerarSecao7Html(itens, evidenciasMap);
+    const secao9 = this.gerarSecao9Html(itens);
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -1160,6 +1219,21 @@ Com base na imagem e no contexto do item falho, forneça:
             .chancela-at .at-logo span { color: #B5642A; }
             .chancela-at .at-txt { font-size: 7.5pt; color: #8A949C; line-height: 1.6; }
 
+            /* === SEÇÃO 9 — Memorial Descritivo === */
+            .s9-card { border:1px solid #D8D0C6; border-radius:6px; margin-bottom:6mm; page-break-inside:avoid; overflow:hidden; }
+            .s9-header { background:#132A41; color:#fff; padding:3mm 4mm; display:flex; align-items:center; gap:3mm; }
+            .s9-id { font-size:9pt; font-weight:700; background:rgba(255,255,255,.15); border-radius:3px; padding:1px 5px; }
+            .s9-chips { display:flex; gap:2mm; flex-wrap:wrap; }
+            .s9-chip { font-size:7.5pt; background:rgba(255,255,255,.12); border-radius:3px; padding:1px 5px; }
+            .s9-severity { font-size:7.5pt; margin-left:auto; padding:1.5px 6px; border-radius:3px; font-weight:700; }
+            .s9-sev-min { background:#FEF3C7; color:#92400E; }
+            .s9-sev-reg { background:#FFEDD5; color:#9A3412; }
+            .s9-sev-cri { background:#FEE2E2; color:#991B1B; }
+            .s9-title { font-size:10pt; font-weight:700; color:#132A41; padding:3mm 4mm 1.5mm; }
+            .s9-body { padding:2mm 4mm 4mm; font-size:8.5pt; color:#2b2b2b; }
+            .s9-quant { background:#F7F5F0; border-top:1px solid #D8D0C6; padding:2mm 4mm; font-size:8pt; color:#4A5A66; }
+            .s9-quant strong { color:#B5642A; }
+
             /* === SEÇÃO 7 (mantida intacta — não alterar estas classes) === */
             .nc-card { break-inside: avoid; border: 1px solid #B0BEC5; border-radius: 3px; margin: 5mm 0; overflow: hidden; }
             .nc-header { background: #132A41; color: #fff; padding: 2.5mm 3.5mm; display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; }
@@ -1365,6 +1439,76 @@ Com base na imagem e no contexto do item falho, forneça:
     novaJanela.document.write(htmlContent);
     novaJanela.document.close();
     setTimeout(() => novaJanela.print(), 800);
+  }
+
+  private gerarSecao9Html(itens: ChecklistItem[]): string {
+    const itensComMemorial = itens.filter(
+      item => (item.status === 'NAO_CONFORME' || item.status === 'FAIL') && item.memorialDescritivo?.trim()
+    );
+
+    if (itensComMemorial.length === 0) {
+      return `
+        <h2 class="sec-h"><span class="sn">9.</span> Plano de Ação e Memorial Descritivo</h2>
+        <p style="font-size:9pt;color:#6B7280;font-style:italic;margin-bottom:6mm;">
+          Nenhum memorial descritivo gerado para esta vistoria. Para gerar, acesse cada item Não Conforme na Vistoria RTIPA e clique em "Gerar Memorial Descritivo".
+        </p>`;
+    }
+
+    let html = `<h2 class="sec-h"><span class="sn">9.</span> Plano de Ação e Memorial Descritivo</h2>`;
+
+    let seq = 0;
+    for (const item of itensComMemorial) {
+      seq++;
+      const seqStr = String(seq).padStart(2, '0');
+
+      let sevClass = '';
+      let sevLabel = '';
+      if (item.severity === 'Mínimo') { sevClass = 's9-sev-min'; sevLabel = 'Risco Mínimo'; }
+      else if (item.severity === 'Regular') { sevClass = 's9-sev-reg'; sevLabel = 'Risco Regular'; }
+      else if (item.severity === 'Crítico') { sevClass = 's9-sev-cri'; sevLabel = 'Risco Crítico'; }
+
+      const quantDisplay = item.quantitativo?.trim()
+        ? `<div class="s9-quant"><strong>Quantitativo de campo:</strong> ${item.quantitativo.trim()}</div>`
+        : '';
+
+      const memorialHtml = this.markdownParaHtmlPdf(item.memorialDescritivo ?? '');
+
+      html += `
+        <div class="s9-card no-break">
+          <div class="s9-header">
+            <span class="s9-id">${seqStr}</span>
+            <div class="s9-chips">
+              <span class="s9-chip">${item.systemTitle ?? ''}</span>
+              <span class="s9-chip">${item.typologyTitle ?? ''}</span>
+            </div>
+            ${sevLabel ? `<span class="s9-severity ${sevClass}">${sevLabel}</span>` : ''}
+          </div>
+          <div class="s9-title">${item.title ?? ''}</div>
+          <div class="s9-body">${memorialHtml}</div>
+          ${quantDisplay}
+        </div>`;
+    }
+
+    return html;
+  }
+
+  private markdownParaHtmlPdf(text: string): string {
+    if (!text) return '';
+    let html = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code style="background:#F0EDE7;padding:1px 4px;border-radius:3px;font-size:7.5pt;">$1</code>')
+      .replace(/^### (.*$)/gim, '<h4 style="font-size:9pt;font-weight:700;color:#132A41;margin:3mm 0 1mm;">$1</h4>')
+      .replace(/^## (.*$)/gim, '<h3 style="font-size:10pt;font-weight:700;color:#132A41;margin:4mm 0 1.5mm;">$1</h3>')
+      .replace(/^# (.*$)/gim, '<h3 style="font-size:11pt;font-weight:700;color:#132A41;margin:4mm 0 2mm;">$1</h3>')
+      .replace(/^\* (.*$)/gim, '<li style="margin-bottom:1.5mm;color:#2b2b2b;">$1</li>')
+      .replace(/^- (.*$)/gim, '<li style="margin-bottom:1.5mm;color:#2b2b2b;">$1</li>');
+    // Agrupa <li> consecutivos em <ul>
+    html = html.replace(/(<li[^>]*>.*?<\/li>)/gs,
+      '<ul style="margin:1.5mm 0 1.5mm 4mm;padding-left:3mm;list-style:disc;">$1</ul>');
+    html = html.replace(/<\/ul>\s*<ul[^>]*>/g, '');
+    // Parágrafos: quebras duplas viram <p>
+    html = html.replace(/\n{2,}/g, '</p><p style="margin:1.5mm 0;line-height:1.5;">');
+    return `<p style="margin:1.5mm 0;line-height:1.5;">${html}</p>`;
   }
 
   private gerarSecao7Html(
