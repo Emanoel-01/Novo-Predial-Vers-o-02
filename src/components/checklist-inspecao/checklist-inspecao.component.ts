@@ -23,6 +23,11 @@ export interface ChecklistItem {
   memorialDescritivo?: string; // plano de ação + memorial descritivo gerado pela IA (Seção 9)
 }
 
+export interface FotoGeral {
+  dataUrl: string;
+  timestamp: string;
+}
+
 export interface Vistoria {
   id: string;
   buildingName: string;
@@ -32,9 +37,15 @@ export interface Vistoria {
   lat?: number;
   lng?: number;
   gpsAccuracy?: number;
-  objetoNatureza?: string;
-  artRrtNumero?: string;          // número da ART ou RRT emitida para esta vistoria
-  mapaImagemBase64?: string;      // imagem do mapa de localização (data URL completo)
+  objetoNatureza?: string;          // mantido para compatibilidade com registros antigos
+  memoriaDescritivo?: string;       // Memorial Descritivo da Edificação — aparece na Seção 4
+  artRrtNumero?: string;
+  mapaImagemBase64?: string;
+  codigoPatrimonial?: string;
+  situacaoOperacional?: string;     // Em Uso / Desativado / Em Reforma / Crítico em Manutenção / Interditado
+  tipoAmbiente?: string;            // Urbano / Rural / Industrial
+  acessibilidade?: string;          // Atende / Atende Parcialmente / Não Atende
+  fotosGerais?: FotoGeral[];        // fotos situacionais da edificação (max 4, JPEG comprimidas)
   dateCreated: string;
   dateUpdated: string;
   progress: number;
@@ -131,9 +142,14 @@ export class ChecklistInspecaoComponent implements OnInit {
   novoAddress = signal('');
   novaAreaConstruida = signal('');
   novaIdadeEdificacao = signal('');
-  novoObjetoNatureza = signal('');
+  novoMemoriaDescritivo = signal('');
   novoArtRrt = signal('');
   novaMapaImagemBase64 = signal<string | null>(null);
+  novoCodigoPatrimonial = signal('');
+  novoSituacaoOperacional = signal('');
+  novoTipoAmbiente = signal('');
+  novoAcessibilidade = signal('');
+  novoFotosGerais = signal<FotoGeral[]>([]);
   novoLat = signal<number | null>(null);
   novoLng = signal<number | null>(null);
   novoGpsAccuracy = signal<number | null>(null);
@@ -144,7 +160,8 @@ export class ChecklistInspecaoComponent implements OnInit {
   filtroSistema = signal<string>('TODOS');
 
   // Modo de visualização: 'LISTA' (gerenciar vistorias) ou 'EXECUCAO' (inspecionando no local) ou 'CRIACAO' (configurando nova)
-  modoExibicao = signal<'LISTA' | 'CRIACAO' | 'EXECUCAO'>('LISTA');
+  modoExibicao = signal<'LISTA' | 'CRIACAO' | 'EXECUCAO' | 'EDICAO'>('LISTA');
+  vistoriaEmEdicao = signal<Vistoria | null>(null);
 
   // Carregar os sistemas organizados da base de dados estática
   sistemasDisponiveis = computed(() => {
@@ -311,9 +328,14 @@ export class ChecklistInspecaoComponent implements OnInit {
     this.novoAddress.set('');
     this.novaAreaConstruida.set('');
     this.novaIdadeEdificacao.set('');
-    this.novoObjetoNatureza.set('');
+    this.novoMemoriaDescritivo.set('');
     this.novoArtRrt.set('');
     this.novaMapaImagemBase64.set(null);
+    this.novoCodigoPatrimonial.set('');
+    this.novoSituacaoOperacional.set('');
+    this.novoTipoAmbiente.set('');
+    this.novoAcessibilidade.set('');
+    this.novoFotosGerais.set([]);
     this.novoLat.set(null);
     this.novoLng.set(null);
     this.novoGpsAccuracy.set(null);
@@ -334,6 +356,52 @@ export class ChecklistInspecaoComponent implements OnInit {
   }
 
   cancelarCriacao(): void {
+    this.modoExibicao.set('LISTA');
+  }
+
+  editarVistoria(event: Event, vistoria: Vistoria): void {
+    event.stopPropagation();
+    this.vistoriaEmEdicao.set(vistoria);
+    this.novoMemoriaDescritivo.set(vistoria.memoriaDescritivo ?? vistoria.objetoNatureza ?? '');
+    this.novaAreaConstruida.set(vistoria.areaConstruida ?? '');
+    this.novaIdadeEdificacao.set(vistoria.idadeEdificacao ?? '');
+    this.novoArtRrt.set(vistoria.artRrtNumero ?? '');
+    this.novoCodigoPatrimonial.set(vistoria.codigoPatrimonial ?? '');
+    this.novoSituacaoOperacional.set(vistoria.situacaoOperacional ?? '');
+    this.novoTipoAmbiente.set(vistoria.tipoAmbiente ?? '');
+    this.novoAcessibilidade.set(vistoria.acessibilidade ?? '');
+    this.novaMapaImagemBase64.set(vistoria.mapaImagemBase64 ?? null);
+    this.novoFotosGerais.set(vistoria.fotosGerais ? [...vistoria.fotosGerais] : []);
+    this.modoExibicao.set('EDICAO');
+  }
+
+  async salvarEdicaoVistoria(): Promise<void> {
+    const vistoria = this.vistoriaEmEdicao();
+    if (!vistoria) return;
+    const atualizada: Vistoria = {
+      ...vistoria,
+      memoriaDescritivo: this.novoMemoriaDescritivo().trim() || undefined,
+      areaConstruida: this.novaAreaConstruida().trim() || undefined,
+      idadeEdificacao: this.novaIdadeEdificacao().trim() || undefined,
+      artRrtNumero: this.novoArtRrt().trim() || undefined,
+      codigoPatrimonial: this.novoCodigoPatrimonial().trim() || undefined,
+      situacaoOperacional: this.novoSituacaoOperacional() || undefined,
+      tipoAmbiente: this.novoTipoAmbiente() || undefined,
+      acessibilidade: this.novoAcessibilidade() || undefined,
+      mapaImagemBase64: this.novaMapaImagemBase64() ?? undefined,
+      fotosGerais: this.novoFotosGerais().length > 0 ? [...this.novoFotosGerais()] : undefined,
+      dateUpdated: new Date().toISOString(),
+    };
+    const lista = this.vistorias().map(v => v.id === atualizada.id ? atualizada : v);
+    await this.salvarVistorias(lista);
+    this.vistorias.set(lista);
+    this.vistoriaEmEdicao.set(null);
+    this.modoExibicao.set('LISTA');
+    this.toastService.show('Dados do imóvel atualizados com sucesso.', 'success');
+  }
+
+  cancelarEdicao(): void {
+    this.vistoriaEmEdicao.set(null);
     this.modoExibicao.set('LISTA');
   }
 
@@ -433,9 +501,14 @@ export class ChecklistInspecaoComponent implements OnInit {
       lat: this.novoLat() ?? undefined,
       lng: this.novoLng() ?? undefined,
       gpsAccuracy: this.novoGpsAccuracy() ?? undefined,
-      objetoNatureza: this.novoObjetoNatureza().trim() || undefined,
+      memoriaDescritivo: this.novoMemoriaDescritivo().trim() || undefined,
       artRrtNumero: this.novoArtRrt().trim() || undefined,
       mapaImagemBase64: this.novaMapaImagemBase64() ?? undefined,
+      codigoPatrimonial: this.novoCodigoPatrimonial().trim() || undefined,
+      situacaoOperacional: this.novoSituacaoOperacional() || undefined,
+      tipoAmbiente: this.novoTipoAmbiente() || undefined,
+      acessibilidade: this.novoAcessibilidade() || undefined,
+      fotosGerais: this.novoFotosGerais().length > 0 ? this.novoFotosGerais() : undefined,
       dateCreated: new Date().toISOString(),
       dateUpdated: new Date().toISOString(),
       progress: 0,
@@ -693,6 +766,59 @@ EPIs obrigatórios, isolamento de área, condicionantes ambientais e cuidados es
     } finally {
       this.gerandoMemorialId.set(null);
     }
+  }
+
+  private comprimirImagem(dataUrl: string, maxWidth = 900, quality = 0.78): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width;
+        let h = img.height;
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(dataUrl); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  async onFotoGeralChange(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    const atuais = this.novoFotosGerais();
+    const max = 4;
+    const restante = max - atuais.length;
+    if (restante <= 0) {
+      this.toastService.show('Máximo de 4 fotos gerais atingido.', 'info');
+      return;
+    }
+    for (const file of files.slice(0, restante)) {
+      if (!file.type.startsWith('image/')) continue;
+      await new Promise<void>(res => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const dataUrl = e.target?.result as string;
+          const compressed = await this.comprimirImagem(dataUrl, 900, 0.78);
+          this.novoFotosGerais.update(arr => [
+            ...arr,
+            { dataUrl: compressed, timestamp: new Date().toISOString() }
+          ]);
+          res();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    input.value = '';
+  }
+
+  removerFotoGeral(index: number): void {
+    this.novoFotosGerais.update(arr => arr.filter((_, i) => i !== index));
   }
 
   onMapaImagemChange(event: Event): void {
@@ -976,7 +1102,6 @@ Com base na imagem e no contexto do item falho, forneça:
             <td style="font-size: 0.85em;"><strong>${item.typologyTitle}</strong><br><span style="color: #666;">${item.title}</span></td>
             <td style="font-size: 0.8em; color: #555;">${item.description}</td>
             <td style="text-align: center;"><span class="${badgeClass}">${badgeText}</span></td>
-            <td style="font-size: 0.8em; max-width: 150px; word-wrap: break-word;">${item.notes || '<em>Nenhuma anotação.</em>'}</td>
           </tr>
         `;
       });
@@ -1337,7 +1462,6 @@ Com base na imagem e no contexto do item falho, forneça:
             conforme identificação e caracterização constantes das seções subsequentes.
             A inspeção foi realizada por profissional habilitado (${profile.fullName} — ${profile.professionalId || 'CAU/CREA'}),
             com emissão de Registro de Responsabilidade Técnica (RRT/ART), em conformidade com a ABNT NBR 16747:2020.
-            ${ativa.objetoNatureza ? `<br><br>${ativa.objetoNatureza}` : ''}
           </p>
 
           <!-- SEÇÃO 3 — Objetivo, Metodologia e Normas -->
@@ -1384,20 +1508,46 @@ Com base na imagem e no contexto do item falho, forneça:
           <table class="t-ident">
             <tr><td>Denominação</td><td>${ativa.buildingName}</td></tr>
             <tr><td>Endereço</td><td>${ativa.address}</td></tr>
+            ${ativa.codigoPatrimonial ? `<tr><td>Código Patrimonial</td><td>${ativa.codigoPatrimonial}</td></tr>` : ''}
             ${ativa.areaConstruida ? `<tr><td>Área Construída</td><td>${ativa.areaConstruida}</td></tr>` : ''}
             ${ativa.idadeEdificacao ? `<tr><td>Idade da Edificação</td><td>${ativa.idadeEdificacao}</td></tr>` : ''}
+            ${ativa.situacaoOperacional ? `<tr><td>Situação Operacional</td><td>${ativa.situacaoOperacional}</td></tr>` : ''}
+            ${ativa.tipoAmbiente ? `<tr><td>Tipo de Ambiente</td><td>${ativa.tipoAmbiente}</td></tr>` : ''}
+            ${ativa.acessibilidade ? `<tr><td>Acessibilidade (NBR 9050)</td><td>${ativa.acessibilidade}</td></tr>` : ''}
             ${(ativa.lat && ativa.lng) ? `<tr><td>Coordenadas GPS</td><td>${ativa.lat.toFixed(6)}, ${ativa.lng.toFixed(6)}${ativa.gpsAccuracy ? ` · precisão ±${Math.round(ativa.gpsAccuracy)} m` : ''}</td></tr>` : ''}
             ${(ativa.lat && ativa.lng) && !ativa.mapaImagemBase64 ? `<tr><td>Localização</td><td><a href="https://www.openstreetmap.org/?mlat=${ativa.lat}&mlon=${ativa.lng}&zoom=17" style="color:#185fa5;">Ver no mapa (OpenStreetMap)</a></td></tr>` : ''}
           </table>
           ${ativa.mapaImagemBase64 ? `
-            <div style="margin:3mm 0 4mm;border:1px solid #D8D0C6;border-radius:4px;overflow:hidden;">
+            <div style="margin:3mm 0 3mm;border:1px solid #D8D0C6;border-radius:4px;overflow:hidden;">
               <div style="background:#F7F5F0;padding:1.5mm 3mm;font-size:7.5pt;font-weight:600;color:#4A5A66;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #D8D0C6;">Mapa de Localização</div>
               <img src="${ativa.mapaImagemBase64}" alt="Mapa de localização da edificação" style="width:100%;max-height:90mm;object-fit:contain;display:block;">
             </div>
           ` : ''}
-          <p style="font-size:8pt;color:#6B7280;font-style:italic;margin-bottom:6mm;">
+          <p style="font-size:8pt;color:#6B7280;font-style:italic;margin-bottom:4mm;">
             ${ativa.mapaImagemBase64 ? `Imagem do mapa de localização gerada externamente e anexada pelo Responsável Técnico.` : (ativa.lat && ativa.lng) ? `Georreferenciamento capturado automaticamente no dispositivo de campo (precisão GPS do smartphone). Imagem cartográfica detalhada disponível via link acima.` : `Nota: Coordenadas GPS não capturadas nesta vistoria. Abrir o formulário de nova vistoria em campo para captura automática.`}
           </p>
+          ${(ativa.memoriaDescritivo || ativa.objetoNatureza) ? `
+            <div style="margin:4mm 0;border-left:3px solid #B5642A;padding:3mm 4mm;background:#FAFAF8;border-radius:0 4px 4px 0;">
+              <div style="font-size:7.5pt;font-weight:700;color:#4A5A66;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2mm;">Memorial Descritivo da Edificação</div>
+              <p style="font-size:8.5pt;line-height:1.65;text-align:justify;color:#2b2b2b;margin:0;">${ativa.memoriaDescritivo || ativa.objetoNatureza}</p>
+            </div>
+          ` : ''}
+          ${(ativa.fotosGerais && ativa.fotosGerais.length > 0) ? `
+            <div style="margin:4mm 0;">
+              <div style="font-size:7.5pt;font-weight:700;color:#4A5A66;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3mm;">
+                Relatório Fotográfico Situacional
+                <span style="font-size:6.5pt;background:#F7F5F0;border:1px solid #D8D0C6;border-radius:3px;padding:1px 5px;font-weight:600;margin-left:3mm;">${ativa.fotosGerais.length} foto(s)</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;">
+                ${ativa.fotosGerais.map((f, i) => `
+                  <div style="border:1px solid #D8D0C6;border-radius:4px;overflow:hidden;page-break-inside:avoid;">
+                    <img src="${f.dataUrl}" alt="Foto situacional ${i+1}" style="width:100%;max-height:55mm;object-fit:cover;display:block;">
+                    <div style="padding:1.5mm 2mm;font-size:7pt;color:#4A5A66;background:#F7F5F0;">Foto ${String(i+1).padStart(2,'0')} — ${new Date(f.timestamp).toLocaleString('pt-BR')}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
 
           <!-- SEÇÃO 5 — Síntese -->
           <h2 class="sec-h"><span class="sn">5.</span> Síntese da Inspeção</h2>
@@ -1433,10 +1583,9 @@ Com base na imagem e no contexto do item falho, forneça:
           <table class="t-std">
             <thead>
               <tr>
-                <th style="width:25%">Tipologia / Item</th>
-                <th style="width:35%">Procedimento e Critério de Inspeção</th>
-                <th style="width:18%;text-align:center">Status</th>
-                <th style="width:22%">Anotações</th>
+                <th style="width:30%">Tipologia / Item</th>
+                <th style="width:50%">Procedimento e Critério de Inspeção</th>
+                <th style="width:20%;text-align:center">Status</th>
               </tr>
             </thead>
             <tbody>

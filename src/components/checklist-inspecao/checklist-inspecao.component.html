@@ -37,12 +37,20 @@
               <div>
                 <div class="flex justify-between items-start gap-2 mb-3">
                   <h3 class="font-bold text-slate-800 group-hover:text-sky-700 transition-colors line-clamp-1 text-base">{{ vistoria.buildingName }}</h3>
-                  <button type="button"
-                          (click)="excluirVistoria($event, vistoria.id)"
-                          class="text-slate-400 hover:text-red-600 p-1 rounded-md hover:bg-red-50 transition-colors flex-shrink-0 relative z-10"
-                          title="Excluir Vistoria">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                  </button>
+                  <div class="flex items-center gap-1 flex-shrink-0 relative z-10">
+                    <button type="button"
+                            (click)="editarVistoria($event, vistoria)"
+                            class="text-slate-400 hover:text-sky-600 p-1 rounded-md hover:bg-sky-50 transition-colors"
+                            title="Editar Dados do Imóvel">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button type="button"
+                            (click)="excluirVistoria($event, vistoria.id)"
+                            class="text-slate-400 hover:text-red-600 p-1 rounded-md hover:bg-red-50 transition-colors"
+                            title="Excluir Vistoria">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                  </div>
                 </div>
                 <p class="text-slate-500 text-xs flex items-center gap-1.5 mb-4">
                   <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -70,6 +78,153 @@
           }
         </div>
       }
+    </div>
+  }
+
+  <!-- MODO 4: EDITAR DADOS DO IMÓVEL (EDICAO) -->
+  @if (modoExibicao() === 'EDICAO' && vistoriaEmEdicao()) {
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-slate-100 space-y-6">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold text-sky-900">Editar Dados do Imóvel</h2>
+          <p class="text-slate-500 text-sm">Atualize as informações cadastrais e gerais da edificação ativa</p>
+        </div>
+        <button (click)="cancelarEdicao()" class="text-slate-500 hover:text-slate-800 p-2 rounded-lg hover:bg-slate-50 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-6 p-5 border border-slate-200 rounded-xl bg-slate-50/50">
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Nome do Edifício</label>
+          <input [value]="vistoriaEmEdicao()?.buildingName" disabled
+                 class="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-500 shadow-none cursor-not-allowed">
+          <p class="text-[10px] text-slate-400">O nome do edifício não pode ser editado após a criação para manter a consistência histórica do banco de dados local.</p>
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Endereço do Imóvel</label>
+          <input [value]="vistoriaEmEdicao()?.address" disabled
+                 class="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-500 shadow-none cursor-not-allowed">
+          <p class="text-[10px] text-slate-400">O endereço não pode ser editado após a criação para manter a consistência histórica do banco de dados local.</p>
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Código Patrimonial</label>
+          <input [value]="novoCodigoPatrimonial()" 
+                 (input)="novoCodigoPatrimonial.set($any($event.target).value)" 
+                 placeholder="Ex: PAT-2026-88" 
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Número da ART / RRT</label>
+          <input [value]="novoArtRrt()" 
+                 (input)="novoArtRrt.set($any($event.target).value)" 
+                 placeholder="Ex: 2026RE000123456" 
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Área Construída</label>
+          <input [value]="novaAreaConstruida()" 
+                 (input)="novaAreaConstruida.set($any($event.target).value)" 
+                 placeholder="Ex: 1.200 m²" 
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Idade da Edificação</label>
+          <input [value]="novaIdadeEdificacao()" 
+                 (input)="novaIdadeEdificacao.set($any($event.target).value)" 
+                 placeholder="Ex: 18 anos (construída em 2006)" 
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Situação Operacional</label>
+          <select [value]="novoSituacaoOperacional()"
+                  (change)="novoSituacaoOperacional.set($any($event.target).value)"
+                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+            <option value="">Selecione...</option>
+            <option value="Em Uso">Em Uso</option>
+            <option value="Desativado">Desativado</option>
+            <option value="Em Reforma">Em Reforma</option>
+            <option value="Crítico em Manutenção">Crítico em Manutenção</option>
+            <option value="Interditado">Interditado</option>
+          </select>
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Tipo de Ambiente</label>
+          <select [value]="novoTipoAmbiente()"
+                  (change)="novoTipoAmbiente.set($any($event.target).value)"
+                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+            <option value="">Selecione...</option>
+            <option value="Urbano">Urbano</option>
+            <option value="Rural">Rural</option>
+            <option value="Industrial">Industrial</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2 space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Acessibilidade (NBR 9050)</label>
+          <select [value]="novoAcessibilidade()"
+                  (change)="novoAcessibilidade.set($any($event.target).value)"
+                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+            <option value="">Selecione...</option>
+            <option value="Atende">Atende</option>
+            <option value="Atende Parcialmente">Atende Parcialmente</option>
+            <option value="Não Atende">Não Atende</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2 space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Memorial Descritivo da Edificação</label>
+          <textarea [value]="novoMemoriaDescritivo()"
+                    (input)="novoMemoriaDescritivo.set($any($event.target).value)"
+                    rows="3"
+                    placeholder="Ex: Edificação residencial multifamiliar composta por duas torres de 15 pavimentos..."
+                    class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></textarea>
+        </div>
+        <div class="sm:col-span-2 space-y-2">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Imagem do Mapa de Localização</label>
+          <p class="text-xs text-slate-400 -mt-1">Substitua ou anexe o mapa de localização. Formatos aceitos: PNG, JPG.</p>
+          <input type="file" accept="image/png,image/jpeg,image/jpg"
+                 (change)="onMapaImagemChange($event)"
+                 class="block w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer border border-slate-300 rounded-lg bg-white px-2 py-1.5">
+          @if (novaMapaImagemBase64()) {
+            <div class="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="font-semibold">Imagem do mapa carregada com sucesso.</span>
+            </div>
+          }
+        </div>
+        <div class="sm:col-span-2 space-y-2">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Fotos Gerais Situacionais da Edificação (máx. 4)</label>
+          <input type="file" accept="image/png,image/jpeg,image/jpg" multiple
+                 (change)="onFotoGeralChange($event)"
+                 class="block w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer border border-slate-300 rounded-lg bg-white px-2 py-1.5">
+          @if (novoFotosGerais().length > 0) {
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+              @for (foto of novoFotosGerais(); track $index) {
+                <div class="relative rounded-lg overflow-hidden border border-slate-200 bg-white group aspect-video shadow-xs">
+                  <img [src]="foto.dataUrl" class="w-full h-full object-cover">
+                  <button type="button" (click)="removerFotoGeral($index)" 
+                          class="absolute top-1.5 right-1.5 bg-red-600/90 hover:bg-red-700 text-white p-1 rounded-full transition-all shadow-sm active:scale-90 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] px-1.5 py-0.5 truncate">
+                    {{ foto.timestamp | date:'HH:mm:ss' }}
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="flex gap-4 pt-4 border-t border-slate-100">
+        <button (click)="cancelarEdicao()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors active:scale-95">
+          Cancelar
+        </button>
+        <button (click)="salvarEdicaoVistoria()" class="flex-1 bg-sky-700 hover:bg-sky-800 text-white font-bold py-3 rounded-xl text-sm transition-colors shadow-md active:scale-95">
+          Salvar Alterações
+        </button>
+      </div>
     </div>
   }
 
@@ -102,17 +257,6 @@
                  placeholder="Ex: Rua das Palmeiras, 450 - Bairro Novo" 
                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
         </div>
-        <div class="sm:col-span-2 space-y-1">
-          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
-            Objeto e Natureza da Inspeção
-            <span class="normal-case font-normal text-slate-400 ml-1">(opcional — aparece na Seção 2 do RTIPA)</span>
-          </label>
-          <textarea [value]="novoObjetoNatureza()"
-                    (input)="novoObjetoNatureza.set($any($event.target).value)"
-                    rows="3"
-                    placeholder="Ex: Inspeção periódica de rotina por determinação da Lei Municipal de Inspeção Predial, abrangendo estrutura, cobertura, fachada e instalações. Período de referência: 2026."
-                    class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></textarea>
-        </div>
         <div class="space-y-1">
           <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
             Área Construída
@@ -135,6 +279,60 @@
         </div>
         <div class="space-y-1">
           <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+            Código Patrimonial
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional)</span>
+          </label>
+          <input [value]="novoCodigoPatrimonial()"
+                 (input)="novoCodigoPatrimonial.set($any($event.target).value)"
+                 placeholder="Ex: PREF-REC-2024-001"
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+            Situação Operacional
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional)</span>
+          </label>
+          <select [value]="novoSituacaoOperacional()"
+                  (change)="novoSituacaoOperacional.set($any($event.target).value)"
+                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+            <option value="">Selecione…</option>
+            <option>Em Uso</option>
+            <option>Desativado</option>
+            <option>Em Reforma</option>
+            <option>Crítico em Manutenção</option>
+            <option>Interditado</option>
+          </select>
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+            Tipo de Ambiente
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional)</span>
+          </label>
+          <select [value]="novoTipoAmbiente()"
+                  (change)="novoTipoAmbiente.set($any($event.target).value)"
+                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+            <option value="">Selecione…</option>
+            <option>Urbano</option>
+            <option>Rural</option>
+            <option>Industrial</option>
+          </select>
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+            Acessibilidade (NBR 9050)
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional)</span>
+          </label>
+          <select [value]="novoAcessibilidade()"
+                  (change)="novoAcessibilidade.set($any($event.target).value)"
+                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+            <option value="">Selecione…</option>
+            <option>Atende</option>
+            <option>Atende Parcialmente</option>
+            <option>Não Atende</option>
+          </select>
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
             Número da ART / RRT
             <span class="normal-case font-normal text-slate-400 ml-1">(opcional — aparece na Seção 1 do RTIPA)</span>
           </label>
@@ -143,12 +341,46 @@
                  placeholder="Ex: 2026RE000123456" 
                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
         </div>
+        <div class="sm:col-span-2 space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+            Memorial Descritivo da Edificação
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional — use o Gerador Seção 4 externo para gerar — aparece na Seção 4 do RTIPA)</span>
+          </label>
+          <textarea [value]="novoMemoriaDescritivo()"
+                    (input)="novoMemoriaDescritivo.set($any($event.target).value)"
+                    rows="4"
+                    placeholder="Cole aqui o Memorial Descritivo gerado pelo Gerador Seção 4 externo. Descreve o imóvel: tipo de uso, sistema construtivo, estado de conservação aparente, localização e acessos..."
+                    class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></textarea>
+        </div>
+        <div class="sm:col-span-2 space-y-2">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+            Fotos Gerais da Edificação
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional — fachada, entorno, cobertura — máx. 4 fotos — Seção 4)</span>
+          </label>
+          <p class="text-xs text-slate-400 -mt-1">Serão comprimidas automaticamente. Aparecem como Relatório Fotográfico Situacional na Seção 4.</p>
+          <input type="file" accept="image/*" multiple
+                 (change)="onFotoGeralChange($event)"
+                 class="block w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer border border-slate-300 rounded-lg bg-white px-2 py-1.5">
+          @if (novoFotosGerais().length > 0) {
+            <div class="grid grid-cols-4 gap-2 mt-2">
+              @for (foto of novoFotosGerais(); track foto.timestamp; let i = $index) {
+                <div class="relative rounded-lg overflow-hidden border border-slate-200 aspect-video bg-slate-50">
+                  <img [src]="foto.dataUrl" alt="Foto geral" class="w-full h-full object-cover">
+                  <button type="button" (click)="removerFotoGeral(i)"
+                          class="absolute top-1 right-1 bg-rose-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold hover:bg-rose-700 cursor-pointer">
+                    ×
+                  </button>
+                </div>
+              }
+            </div>
+            <p class="text-xs text-emerald-700 font-semibold">{{ novoFotosGerais().length }}/4 foto(s) carregada(s).</p>
+          }
+        </div>
         <div class="sm:col-span-2 space-y-2">
           <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
             Imagem do Mapa de Localização
             <span class="normal-case font-normal text-slate-400 ml-1">(opcional — Seção 4 do RTIPA)</span>
           </label>
-          <p class="text-xs text-slate-400 -mt-1">Gere o PNG no Gerador Seção 4 externo e anexe aqui. Formatos aceitos: PNG, JPG.</p>
           <input type="file" accept="image/png,image/jpeg,image/jpg"
                  (change)="onMapaImagemChange($event)"
                  class="block w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer border border-slate-300 rounded-lg bg-white px-2 py-1.5">
