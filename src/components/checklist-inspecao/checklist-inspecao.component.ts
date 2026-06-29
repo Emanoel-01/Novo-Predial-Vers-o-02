@@ -1223,6 +1223,12 @@ Com base na imagem e no contexto do item falho, forneça:
                 font-size: 7pt;
                 color: #8A949C;
               }
+              @top-right {
+                content: "Pág. " counter(page) " / " counter(pages);
+                font-family: 'Inter', 'Segoe UI', sans-serif;
+                font-size: 7pt;
+                color: #8A949C;
+              }
             }
             @media print {
               body { padding: 14mm 0 8mm 0 !important; font-size: 9pt; }
@@ -1273,8 +1279,7 @@ Com base na imagem e no contexto do item falho, forneça:
             }
             .rf-doc { font-weight: 600; color: #132A41; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 50%; }
             .rf-prov { color: #B5642A; font-size: 7pt; font-weight: 600; }
-            .rf-page { color: #6B7280; white-space: nowrap; font-size: 7pt; }
-            .rf-page::before { content: "Pág. " counter(page) " / " counter(pages); }
+            .rf-page { display: none; }
 
             /* === FONTES: carregadas no início do <style> === */
 
