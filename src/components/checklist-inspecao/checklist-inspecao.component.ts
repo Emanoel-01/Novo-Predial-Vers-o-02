@@ -778,7 +778,7 @@ Com base na imagem e no contexto do item falho, forneça:
     void this.carregarVistorias(); // Recarregar e ordenar
   }
 
-  exportarRelatorioPDF(): void {
+  async exportarRelatorioPDF(): Promise<void> {
     const ativa = this.vistoriaAtiva();
     const profile = this.userProfile();
     if (!profile || !registroValido(profile.professionalId)) {
@@ -788,6 +788,39 @@ Com base na imagem e no contexto do item falho, forneça:
     if (!ativa) {
       this.toastService.show('Dados insuficientes para gerar o relatório em PDF.', 'error');
       return;
+    }
+
+    const novaJanela = window.open('', '_blank');
+    if (!novaJanela) {
+      alert('Popup bloqueado. Permita popups para este site e tente novamente.');
+      return;
+    }
+    novaJanela.document.write('<html><body style="font-family:sans-serif;padding:20px">Gerando relatório, aguarde…</body></html>');
+
+    // Pré-carregar evidências como data URL base64
+    const evidenciasMap = new Map<string, { dataUrl: string; geo: any; timestamp: string; tipo: string }>();
+
+    const itens = ativa.items ?? [];
+
+    for (const item of itens) {
+      if (item.id_evidencias?.length) {
+        for (const evId of item.id_evidencias) {
+          try {
+            const ev = await this.dbService.getEvidencia(evId);
+            if (ev?.blob) {
+              const dataUrl = await this.blobParaBase64(ev.blob);
+              evidenciasMap.set(evId, {
+                dataUrl,
+                geo: ev.geo ?? null,
+                timestamp: ev.timestamp ? new Date(ev.timestamp).toLocaleString('pt-BR') : '',
+                tipo: ev.tipo ?? 'contexto'
+              });
+            }
+          } catch {
+            // evidência não encontrada — ignora silenciosamente
+          }
+        }
+      }
     }
 
     const estatisticas = this.estatisticasAtivas();
@@ -839,6 +872,8 @@ Com base na imagem e no contexto do item falho, forneça:
       if (profile.companyAddress) companyInfo += `<p>${profile.companyAddress}</p>`;
     }
 
+    const secao7 = this.gerarSecao7Html(itens, evidenciasMap);
+
     const htmlContent = `
       <!DOCTYPE html>
       <html lang="pt-BR">
@@ -879,6 +914,41 @@ Com base na imagem e no contexto do item falho, forneça:
 
               .disclaimer { background-color: #fef3c7; padding: 12px; border-radius: 6px; margin-top: 30px; border-left: 4px solid #f59e0b; font-size: 0.85em; }
               @media print { body { margin: 20px; font-size: 9pt; } }
+
+              /* === SEÇÃO 7 — Relatório Fotográfico (Fase 1.3-B) === */
+              .sec-h { color: #0c4a6e; margin-top: 25px; margin-bottom: 10px; border-bottom: 1.5px solid #0c4a6e; padding-bottom: 5px; font-size: 1.3em; }
+              .sn { margin-right: 5px; }
+              .nc-card { break-inside: avoid; border: 1px solid #B0BEC5; border-radius: 3px; margin: 5mm 0; overflow: hidden; }
+              .nc-header { background: #132A41; color: #fff; padding: 2.5mm 3.5mm; display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; }
+              .nc-id { font-size: 9.5pt; font-weight: 700; background: rgba(255,255,255,.15); border-radius: 2px; padding: .5mm 2mm; white-space: nowrap; flex-shrink: 0; }
+              .nc-chips { flex: 1; display: flex; gap: 2mm; flex-wrap: wrap; }
+              .nc-chips .chip { background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
+              .chip { display: inline-block; font-size: 6.5pt; font-family: monospace; font-weight: 600; padding: .5mm 2mm; border-radius: 2px; letter-spacing: .04em; }
+              .nc-status-badge { flex-shrink: 0; }
+              .nc-status-badge.nc { background: #FDECEA; color: #C75D45; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; }
+              .nc-status-badge.ok { background: #E8F5EE; color: #2E7D5B; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; }
+              .nc-status-badge.na { background: #F5F2EC; color: #4A5A66; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; }
+              .nc-title-row { background: #F4F6F8; padding: 2.5mm 3.5mm; border-bottom: 1px solid #D8D0C6; font-size: 10pt; font-weight: 600; color: #132A41; }
+              .nc-fotos-grid { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #D8D0C6; }
+              .nc-foto-item { padding: 3mm; border-right: 1px solid #D8D0C6; }
+              .nc-foto-item:last-child { border-right: none; }
+              .sec-lbl { font-size: 7pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #4A5A66; display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm; }
+              .nc-foto-slot { width: 100%; aspect-ratio: 4/3; background: #ECEFF1; border: 1px dashed #D8D0C6; border-radius: 2px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 2mm; }
+              .nc-foto-slot img { width: 100%; height: 100%; object-fit: contain; background: #ECEFF1; }
+              .nc-geo { font-family: monospace; font-size: 6.5pt; color: #4A5A66; line-height: 1.6; }
+              .nc-diag-full { padding: 3mm; border-bottom: 1px solid #D8D0C6; font-size: 8.5pt; line-height: 1.55; }
+              .nc-notes { padding: 3mm; border-bottom: 1px solid #D8D0C6; background: #FAFAFA; font-size: 8.5pt; }
+              .nc-notes .aviso { font-size: 6.5pt; color: #8A949C; font-style: italic; margin-top: 2mm; }
+              .nc-quant { padding: 2.5mm 3mm; background: #F7F5F0; font-size: 8.5pt; display: flex; align-items: center; gap: 3mm; }
+              .nc-quant .ql { font-size: 7pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #4A5A66; }
+              .nc-quant .qv { font-weight: 700; color: #1A2A38; }
+              .badge { display: inline-block; font-size: 6pt; font-weight: 700; padding: .5mm 1.5mm; border-radius: 2px; letter-spacing: .06em; text-transform: uppercase; vertical-align: middle; margin-left: 1mm; }
+              .badge-humano  { background: #2C5AA0; color: #fff; }
+              .badge-maquina { background: #2E7D5B; color: #fff; }
+              .badge-sensor  { background: #E07B39; color: #fff; }
+              .sem-foto-note { padding: 3mm; background: #E8F5EE; border-bottom: 1px solid #D8D0C6; font-size: 7.5pt; color: #2E7D5B; font-style: italic; }
+              .na-aviso { padding: 3mm; background: #F5F2EC; border-bottom: 1px solid #D8D0C6; font-size: 7.5pt; color: #4A5A66; font-style: italic; }
+              .no-break { break-inside: avoid; page-break-inside: avoid; }
           </style>
       </head>
       <body>
@@ -946,6 +1016,8 @@ Com base na imagem e no contexto do item falho, forneça:
             </tbody>
           </table>
 
+          ${secao7}
+
           <div class="disclaimer">
             <p><strong>Responsabilidade e Limites:</strong> As informações anotadas correspondem aos achados de campo no momento da inspeção. Este documento constitui um rascunho técnico de auxílio e sua validação técnica oficial está condicionada à assinatura do profissional habilitado com o respectivo registro de responsabilidade técnica (ART/RRT).</p>
           </div>
@@ -955,13 +1027,132 @@ Com base na imagem e no contexto do item falho, forneça:
       </html>
     `;
 
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write(htmlContent);
-      newWindow.document.close();
-      setTimeout(() => newWindow.print(), 500);
-    } else {
-      this.toastService.show('Não foi possível abrir o relatório em PDF. Permita popups neste site.', 'error');
+    novaJanela.document.open();
+    novaJanela.document.write(htmlContent);
+    novaJanela.document.close();
+    setTimeout(() => novaJanela.print(), 800);
+  }
+
+  private gerarSecao7Html(
+    itens: ChecklistItem[],
+    evidenciasMap: Map<string, { dataUrl: string; geo: any; timestamp: string; tipo: string }>
+  ): string {
+
+    let html = `
+      <h2 class="sec-h"><span class="sn">7.</span> Relatório Fotográfico e Itens de Auxílio à Inspeção</h2>
+    `;
+
+    let seq = 0;
+
+    for (const item of itens) {
+      seq++;
+      const seqStr = String(seq).padStart(2, '0');
+
+      // Determinar badge e classe de status
+      const isNC = item.status === 'NAO_CONFORME' || item.status === 'FAIL';
+      const isOK = item.status === 'CONFORME' || item.status === 'PASS';
+      const isNA = item.status === 'NAO_APLICAVEL' || item.status === 'NA';
+
+      let statusBadge = '';
+      if (isNC) statusBadge = `<span class="nc-status-badge nc">NÃO CONFORME</span>`;
+      else if (isOK) statusBadge = `<span class="nc-status-badge ok">CONFORME</span>`;
+      else if (isNA) statusBadge = `<span class="nc-status-badge na">N/A</span>`;
+      else statusBadge = `<span class="nc-status-badge na">PENDENTE</span>`;
+
+      // Separar evidências por tipo (até 2: contexto + detalhe)
+      const ids = item.id_evidencias ?? [];
+      const evContexto = ids.map((id: string) => evidenciasMap.get(id)).find(e => e?.tipo === 'contexto');
+      const evDetalhe  = ids.map((id: string) => evidenciasMap.get(id)).find(e => e?.tipo === 'detalhe');
+      // fallback: se só há uma foto, coloca em contexto
+      const primeiraEv = ids.length > 0 ? evidenciasMap.get(ids[0]) : null;
+      const ev1 = evContexto ?? primeiraEv ?? null;
+      const ev2 = evDetalhe ?? (ids.length > 1 ? evidenciasMap.get(ids[1]) : null);
+
+      const temFoto = ev1 || ev2;
+
+      // Helper: renderiza um slot de foto
+      const fotoSlotHtml = (ev: any, label: string) => {
+        if (!ev) {
+          return `
+            <div class="nc-foto-item" style="display:flex;align-items:center;justify-content:center;padding:5px;">
+              <div style="font-size:7pt;color:#8A949C;text-align:center;">Foto não registrada</div>
+            </div>`;
+        }
+        const geoHtml = ev.geo
+          ? `<div class="nc-geo">${ev.geo.lat.toFixed(5)}, ${ev.geo.lng.toFixed(5)}${ev.geo.accuracy ? ` · ±${Math.round(ev.geo.accuracy)}m` : ''}<br>${ev.timestamp}</div>`
+          : `<div class="nc-geo">${ev.timestamp}</div>`;
+        return `
+          <div class="nc-foto-item">
+            <div class="sec-lbl">${label} <span class="badge badge-sensor">SENSOR</span></div>
+            <div class="nc-foto-slot">
+              <img src="${ev.dataUrl}" alt="Evidência ${seqStr}">
+            </div>
+            ${geoHtml}
+          </div>`;
+      };
+
+      // Diagnóstico IA — só item NÃO CONFORME, teto 600 chars
+      let diagHtml = '';
+      if (isNC && item.diagnostico_ia) {
+        const diag = item.diagnostico_ia.length > 600
+          ? item.diagnostico_ia.slice(0, 597) + '…'
+          : item.diagnostico_ia;
+        diagHtml = `
+          <div class="nc-diag-full">
+            <div class="sec-lbl">Diagnóstico assistido por IA <span class="badge badge-maquina">MÁQUINA</span></div>
+            ${diag}
+          </div>`;
+      }
+
+      // Anotação do RT — teto 500 chars
+      const notesTexto = item.notes?.trim();
+      const notesDisplay = notesTexto
+        ? (notesTexto.length > 500 ? notesTexto.slice(0, 497) + '…' : notesTexto)
+        : '<em style="color:#8A949C">Nenhuma anotação registrada.</em>';
+
+      // Quantitativo
+      const quantDisplay = item.quantitativo?.trim()
+        ? `<span class="qv">${item.quantitativo.trim()}</span>`
+        : `<span class="qv" style="color:#8A949C;font-style:italic">—</span>`;
+
+      // Bloco de fotos (omitir grid se sem foto E item não NC)
+      let fotosHtml = '';
+      if (temFoto) {
+        fotosHtml = `
+          <div class="nc-fotos-grid">
+            ${fotoSlotHtml(ev1, 'Foto 1 — Contexto')}
+            ${fotoSlotHtml(ev2, 'Foto 2 — Detalhe')}
+          </div>`;
+      } else if (isOK) {
+        fotosHtml = `<div class="sem-foto-note">Nenhuma evidência fotográfica registrada para este item.</div>`;
+      } else if (isNA) {
+        fotosHtml = `<div class="na-aviso">Item não aplicável à tipologia desta edificação.</div>`;
+      }
+
+      html += `
+        <div class="nc-card no-break">
+          <div class="nc-header">
+            <span class="nc-id">${seqStr}</span>
+            <div class="nc-chips">
+              <span class="chip">${item.systemTitle ?? ''}</span>
+              <span class="chip">${item.typologyTitle ?? ''}</span>
+            </div>
+            ${statusBadge}
+          </div>
+          <div class="nc-title-row">${item.title ?? ''}</div>
+          ${fotosHtml}
+          ${diagHtml}
+          <div class="nc-notes">
+            <div class="sec-lbl">Anotação técnica do responsável <span class="badge badge-humano">HUMANO</span></div>
+            ${notesDisplay}
+          </div>
+          <div class="nc-quant">
+            <span class="ql">Quantitativo (campo)</span>
+            ${quantDisplay}
+          </div>
+        </div>`;
     }
+
+    return html;
   }
 }
