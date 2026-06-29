@@ -26,6 +26,8 @@ export interface Vistoria {
   id: string;
   buildingName: string;
   address: string;
+  areaConstruida?: string;
+  idadeEdificacao?: string;
   dateCreated: string;
   dateUpdated: string;
   progress: number;
@@ -119,6 +121,8 @@ export class ChecklistInspecaoComponent implements OnInit {
   // Estado do formulário de criação
   novoBuildingName = signal('');
   novoAddress = signal('');
+  novaAreaConstruida = signal('');
+  novaIdadeEdificacao = signal('');
   selecaoSistemas = signal<{ [key: string]: boolean }>({}); // chave: "systemKey-typologyTitle"
 
   // Filtros de visualização
@@ -291,6 +295,8 @@ export class ChecklistInspecaoComponent implements OnInit {
   abrirCriacao(): void {
     this.novoBuildingName.set('');
     this.novoAddress.set('');
+    this.novaAreaConstruida.set('');
+    this.novaIdadeEdificacao.set('');
     this.selecaoSistemas.set({});
     this.modoExibicao.set('CRIACAO');
   }
@@ -390,6 +396,8 @@ export class ChecklistInspecaoComponent implements OnInit {
       id: 'vistoria-' + Date.now(),
       buildingName: name,
       address: address,
+      areaConstruida: this.novaAreaConstruida().trim() || undefined,
+      idadeEdificacao: this.novaIdadeEdificacao().trim() || undefined,
       dateCreated: new Date().toISOString(),
       dateUpdated: new Date().toISOString(),
       progress: 0,
@@ -1195,6 +1203,18 @@ Com base na imagem e no contexto do item falho, forneça:
             <tr><td>Data da vistoria</td><td>${new Date(ativa.dateCreated).toLocaleDateString('pt-BR')}</td></tr>
             <tr><td>Última atualização</td><td>${new Date(ativa.dateUpdated).toLocaleString('pt-BR')}</td></tr>
           </table>
+
+          <!-- SEÇÃO 4 — Caracterização da Edificação -->
+          <h2 class="sec-h"><span class="sn">4.</span> Caracterização da Edificação</h2>
+          <table class="t-ident">
+            <tr><td>Denominação</td><td>${ativa.buildingName}</td></tr>
+            <tr><td>Endereço</td><td>${ativa.address}</td></tr>
+            ${ativa.areaConstruida ? `<tr><td>Área Construída</td><td>${ativa.areaConstruida}</td></tr>` : ''}
+            ${ativa.idadeEdificacao ? `<tr><td>Idade da Edificação</td><td>${ativa.idadeEdificacao}</td></tr>` : ''}
+          </table>
+          <p style="font-size:8pt;color:#6B7280;font-style:italic;margin-bottom:6mm;">
+            Nota: O mapa de localização georreferenciado será incorporado na versão completa do RTIPA (Fase A3 — pendente).
+          </p>
 
           <!-- SEÇÃO 5 — Síntese -->
           <h2 class="sec-h"><span class="sn">5.</span> Síntese da Inspeção</h2>
