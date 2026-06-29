@@ -133,6 +133,34 @@
                  placeholder="Ex: 18 anos (construída em 2006)" 
                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
         </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+            Número da ART / RRT
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional — aparece na Seção 1 do RTIPA)</span>
+          </label>
+          <input [value]="novoArtRrt()" 
+                 (input)="novoArtRrt.set($any($event.target).value)" 
+                 placeholder="Ex: 2026RE000123456" 
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="sm:col-span-2 space-y-2">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+            Imagem do Mapa de Localização
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional — Seção 4 do RTIPA)</span>
+          </label>
+          <p class="text-xs text-slate-400 -mt-1">Gere o PNG no Gerador Seção 4 externo e anexe aqui. Formatos aceitos: PNG, JPG.</p>
+          <input type="file" accept="image/png,image/jpeg,image/jpg"
+                 (change)="onMapaImagemChange($event)"
+                 class="block w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer border border-slate-300 rounded-lg bg-white px-2 py-1.5">
+          @if (novaMapaImagemBase64()) {
+            <div class="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="font-semibold">Imagem do mapa carregada com sucesso.</span>
+            </div>
+          }
+        </div>
       </div>
 
       <!-- Escolha das tipologias de sistemas -->

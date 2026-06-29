@@ -33,6 +33,8 @@ export interface Vistoria {
   lng?: number;
   gpsAccuracy?: number;
   objetoNatureza?: string;
+  artRrtNumero?: string;          // número da ART ou RRT emitida para esta vistoria
+  mapaImagemBase64?: string;      // imagem do mapa de localização (data URL completo)
   dateCreated: string;
   dateUpdated: string;
   progress: number;
@@ -130,6 +132,8 @@ export class ChecklistInspecaoComponent implements OnInit {
   novaAreaConstruida = signal('');
   novaIdadeEdificacao = signal('');
   novoObjetoNatureza = signal('');
+  novoArtRrt = signal('');
+  novaMapaImagemBase64 = signal<string | null>(null);
   novoLat = signal<number | null>(null);
   novoLng = signal<number | null>(null);
   novoGpsAccuracy = signal<number | null>(null);
@@ -308,6 +312,8 @@ export class ChecklistInspecaoComponent implements OnInit {
     this.novaAreaConstruida.set('');
     this.novaIdadeEdificacao.set('');
     this.novoObjetoNatureza.set('');
+    this.novoArtRrt.set('');
+    this.novaMapaImagemBase64.set(null);
     this.novoLat.set(null);
     this.novoLng.set(null);
     this.novoGpsAccuracy.set(null);
@@ -428,6 +434,8 @@ export class ChecklistInspecaoComponent implements OnInit {
       lng: this.novoLng() ?? undefined,
       gpsAccuracy: this.novoGpsAccuracy() ?? undefined,
       objetoNatureza: this.novoObjetoNatureza().trim() || undefined,
+      artRrtNumero: this.novoArtRrt().trim() || undefined,
+      mapaImagemBase64: this.novaMapaImagemBase64() ?? undefined,
       dateCreated: new Date().toISOString(),
       dateUpdated: new Date().toISOString(),
       progress: 0,
@@ -637,6 +645,8 @@ export class ChecklistInspecaoComponent implements OnInit {
 
     const prompt = `Você é um engenheiro civil perito em manutenção e patologia predial, especialista em inspeção conforme ABNT NBR 16747 e ABNT NBR 5674.
 
+INSTRUÇÃO CRÍTICA: Responda APENAS com os 5 blocos estruturados abaixo. NÃO inclua introdução, preâmbulo, saudação nem qualquer texto antes do Bloco 1. Comece diretamente com "**1. DIAGNÓSTICO TÉCNICO**".
+
 Com base nas evidências coletadas em campo para o item abaixo, redija o Memorial Descritivo de Intervenção em português técnico do Brasil.
 
 ===== DADOS DO ITEM DE INSPEÇÃO =====
@@ -683,6 +693,18 @@ EPIs obrigatórios, isolamento de área, condicionantes ambientais e cuidados es
     } finally {
       this.gerandoMemorialId.set(null);
     }
+  }
+
+  onMapaImagemChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      this.novaMapaImagemBase64.set(result); // guarda data URL completo (inclui prefixo data:image/...)
+    };
+    reader.readAsDataURL(file);
   }
 
   private aplicarMudancaNoItem(itemId: string, updater: (item: ChecklistItem) => ChecklistItem): void {
@@ -977,6 +999,7 @@ Com base na imagem e no contexto do item falho, forneça:
           <meta charset="utf-8">
           <title>Relatório de Vistoria de Campo - ${form.buildingName}</title>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap');
             /* === TOKENS P4 === */
             :root {
               --p4-navy:    #132A41;
@@ -1015,8 +1038,7 @@ Com base na imagem e no contexto do item falho, forneça:
               tr { page-break-inside: avoid; }
             }
 
-            /* === FONTES === */
-            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght=500;600;700&family=Inter:wght=400;500;600;700&display=swap');
+            /* === FONTES: carregadas no início do <style> === */
 
             /* === CAPA === */
             .capa {
@@ -1230,7 +1252,7 @@ Com base na imagem e no contexto do item falho, forneça:
             .s9-sev-reg { background:#FFEDD5; color:#9A3412; }
             .s9-sev-cri { background:#FEE2E2; color:#991B1B; }
             .s9-title { font-size:10pt; font-weight:700; color:#132A41; padding:3mm 4mm 1.5mm; }
-            .s9-body { padding:2mm 4mm 4mm; font-size:8.5pt; color:#2b2b2b; }
+            .s9-body { padding:2mm 4mm 4mm; font-size:8.5pt; color:#2b2b2b; text-align:justify; }
             .s9-quant { background:#F7F5F0; border-top:1px solid #D8D0C6; padding:2mm 4mm; font-size:8pt; color:#4A5A66; }
             .s9-quant strong { color:#B5642A; }
 
@@ -1253,8 +1275,8 @@ Com base na imagem e no contexto do item falho, forneça:
             .nc-foto-slot { width: 100%; aspect-ratio: 4/3; background: #ECEFF1; border: 1px dashed #D8D0C6; border-radius: 2px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 2mm; }
             .nc-foto-slot img { width: 100%; height: 100%; object-fit: contain; background: #ECEFF1; }
             .nc-geo { font-family: monospace; font-size: 6.5pt; color: #4A5A66; line-height: 1.6; }
-            .nc-diag-full { padding: 3mm; border-bottom: 1px solid #D8D0C6; font-size: 8.5pt; line-height: 1.55; }
-            .nc-notes { padding: 3mm; border-bottom: 1px solid #D8D0C6; background: #FAFAFA; font-size: 8.5pt; }
+            .nc-diag-full { padding: 3mm; border-bottom: 1px solid #D8D0C6; font-size: 8.5pt; line-height: 1.55; text-align: justify; }
+            .nc-notes { padding: 3mm; border-bottom: 1px solid #D8D0C6; background: #FAFAFA; font-size: 8.5pt; text-align: justify; }
             .nc-quant { padding: 2.5mm 3mm; background: #F7F5F0; font-size: 8.5pt; display: flex; align-items: center; gap: 3mm; }
             .nc-quant .ql { font-size: 7pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #4A5A66; }
             .nc-quant .qv { font-weight: 700; color: #1A2A38; }
@@ -1304,6 +1326,7 @@ Com base na imagem e no contexto do item falho, forneça:
             <tr><td>Empresa / CNPJ</td><td>${profile.companyName || ''} · ${profile.companyCnpj || ''}</td></tr>
             <tr><td>Data da vistoria</td><td>${new Date(ativa.dateCreated).toLocaleDateString('pt-BR')}</td></tr>
             <tr><td>Última atualização</td><td>${new Date(ativa.dateUpdated).toLocaleString('pt-BR')}</td></tr>
+            ${ativa.artRrtNumero ? `<tr><td>ART / RRT</td><td>${ativa.artRrtNumero}</td></tr>` : ''}
           </table>
 
           <!-- SEÇÃO 2 — Objeto e Natureza -->
@@ -1364,10 +1387,16 @@ Com base na imagem e no contexto do item falho, forneça:
             ${ativa.areaConstruida ? `<tr><td>Área Construída</td><td>${ativa.areaConstruida}</td></tr>` : ''}
             ${ativa.idadeEdificacao ? `<tr><td>Idade da Edificação</td><td>${ativa.idadeEdificacao}</td></tr>` : ''}
             ${(ativa.lat && ativa.lng) ? `<tr><td>Coordenadas GPS</td><td>${ativa.lat.toFixed(6)}, ${ativa.lng.toFixed(6)}${ativa.gpsAccuracy ? ` · precisão ±${Math.round(ativa.gpsAccuracy)} m` : ''}</td></tr>` : ''}
-            ${(ativa.lat && ativa.lng) ? `<tr><td>Localização</td><td><a href="https://www.openstreetmap.org/?mlat=${ativa.lat}&mlon=${ativa.lng}&zoom=17" style="color:#185fa5;">Ver no mapa (OpenStreetMap)</a></td></tr>` : ''}
+            ${(ativa.lat && ativa.lng) && !ativa.mapaImagemBase64 ? `<tr><td>Localização</td><td><a href="https://www.openstreetmap.org/?mlat=${ativa.lat}&mlon=${ativa.lng}&zoom=17" style="color:#185fa5;">Ver no mapa (OpenStreetMap)</a></td></tr>` : ''}
           </table>
+          ${ativa.mapaImagemBase64 ? `
+            <div style="margin:3mm 0 4mm;border:1px solid #D8D0C6;border-radius:4px;overflow:hidden;">
+              <div style="background:#F7F5F0;padding:1.5mm 3mm;font-size:7.5pt;font-weight:600;color:#4A5A66;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #D8D0C6;">Mapa de Localização</div>
+              <img src="${ativa.mapaImagemBase64}" alt="Mapa de localização da edificação" style="width:100%;max-height:90mm;object-fit:contain;display:block;">
+            </div>
+          ` : ''}
           <p style="font-size:8pt;color:#6B7280;font-style:italic;margin-bottom:6mm;">
-            ${(ativa.lat && ativa.lng) ? `Georreferenciamento capturado automaticamente no dispositivo de campo (precisão GPS do smartphone). Imagem cartográfica detalhada disponível via link acima.` : `Nota: Coordenadas GPS não capturadas nesta vistoria. Abrir o formulário de nova vistoria em campo para captura automática.`}
+            ${ativa.mapaImagemBase64 ? `Imagem do mapa de localização gerada externamente e anexada pelo Responsável Técnico.` : (ativa.lat && ativa.lng) ? `Georreferenciamento capturado automaticamente no dispositivo de campo (precisão GPS do smartphone). Imagem cartográfica detalhada disponível via link acima.` : `Nota: Coordenadas GPS não capturadas nesta vistoria. Abrir o formulário de nova vistoria em campo para captura automática.`}
           </p>
 
           <!-- SEÇÃO 5 — Síntese -->
@@ -1441,7 +1470,7 @@ Com base na imagem e no contexto do item falho, forneça:
     novaJanela.document.open();
     novaJanela.document.write(htmlContent);
     novaJanela.document.close();
-    setTimeout(() => novaJanela.print(), 800);
+    setTimeout(() => novaJanela.print(), 1500);
   }
 
   private gerarSecao9Html(itens: ChecklistItem[]): string {
@@ -1497,21 +1526,41 @@ Com base na imagem e no contexto do item falho, forneça:
 
   private markdownParaHtmlPdf(text: string): string {
     if (!text) return '';
+
+    const pStyle = 'margin:1.5mm 0 2mm;line-height:1.6;text-align:justify;font-size:8.5pt;color:#2b2b2b;';
+    const h3Style = 'font-size:9pt;font-weight:800;color:#fff;background:#132A41;padding:2mm 3.5mm;margin:4mm 0 2mm;border-left:3px solid #B5642A;letter-spacing:.02em;';
+    const liStyle = 'margin-bottom:1.5mm;color:#2b2b2b;line-height:1.55;';
+    const ulStyle = 'margin:1.5mm 0 2.5mm 4mm;padding-left:4mm;list-style:disc;';
+
     let html = text
+      // 1) Títulos de bloco: linha inteira que é **N. TEXTO** → heading de seção
+      .replace(/^\*\*(\d+[\.\s]+[^\*\n]+)\*\*\s*$/gim,
+        `<h3 style="${h3Style}">$1</h3>`)
+      // 2) Separador markdown --- → <hr>
+      .replace(/^-{3,}\s*$/gm,
+        '<hr style="border:none;border-top:1px solid #D8D0C6;margin:3mm 0;">')
+      // 3) Bold inline (após headings já processados)
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`([^`]+)`/g, '<code style="background:#F0EDE7;padding:1px 4px;border-radius:3px;font-size:7.5pt;">$1</code>')
-      .replace(/^### (.*$)/gim, '<h4 style="font-size:9pt;font-weight:700;color:#132A41;margin:3mm 0 1mm;">$1</h4>')
-      .replace(/^## (.*$)/gim, '<h3 style="font-size:10pt;font-weight:700;color:#132A41;margin:4mm 0 1.5mm;">$1</h3>')
-      .replace(/^# (.*$)/gim, '<h3 style="font-size:11pt;font-weight:700;color:#132A41;margin:4mm 0 2mm;">$1</h3>')
-      .replace(/^\* (.*$)/gim, '<li style="margin-bottom:1.5mm;color:#2b2b2b;">$1</li>')
-      .replace(/^- (.*$)/gim, '<li style="margin-bottom:1.5mm;color:#2b2b2b;">$1</li>');
-    // Agrupa <li> consecutivos em <ul>
-    html = html.replace(/(<li[^>]*>.*?<\/li>)/gs,
-      '<ul style="margin:1.5mm 0 1.5mm 4mm;padding-left:3mm;list-style:disc;">$1</ul>');
+      // 4) Code inline
+      .replace(/`([^`]+)`/g,
+        '<code style="background:#F0EDE7;padding:1px 4px;border-radius:3px;font-size:7.5pt;">$1</code>')
+      // 5) Headings markdown #
+      .replace(/^### (.*$)/gim,
+        '<h4 style="font-size:9pt;font-weight:700;color:#132A41;margin:3mm 0 1mm;">$1</h4>')
+      .replace(/^## (.*$)/gim,
+        '<h3 style="font-size:10pt;font-weight:700;color:#132A41;margin:4mm 0 1.5mm;">$1</h3>')
+      // 6) Itens de lista
+      .replace(/^[\*\-] (.*$)/gim, `<li style="${liStyle}">$1</li>`);
+
+    // 7) Agrupa <li> consecutivos em <ul>
+    html = html.replace(/(<li[^>]*>[\s\S]*?<\/li>(\s*<li[^>]*>[\s\S]*?<\/li>)*)/g,
+      `<ul style="${ulStyle}">$1</ul>`);
     html = html.replace(/<\/ul>\s*<ul[^>]*>/g, '');
-    // Parágrafos: quebras duplas viram <p>
-    html = html.replace(/\n{2,}/g, '</p><p style="margin:1.5mm 0;line-height:1.5;">');
-    return `<p style="margin:1.5mm 0;line-height:1.5;">${html}</p>`;
+
+    // 8) Parágrafos: quebras duplas de linha
+    html = html.replace(/\n{2,}/g, `</p><p style="${pStyle}">`);
+
+    return `<p style="${pStyle}">${html}</p>`;
   }
 
   private gerarSecao7Html(
