@@ -1216,9 +1216,7 @@ Com base na imagem e no contexto do item falho, forneça:
             }
             @page {
               size: A4 portrait;
-              margin: 8mm 20mm 14mm 20mm;
-            }
-            @page {
+              margin: 8mm 20mm 12mm 20mm;
               @bottom-right {
                 content: "Pág. " counter(page) " / " counter(pages);
                 font-family: 'Inter', 'Segoe UI', sans-serif;
@@ -1227,76 +1225,56 @@ Com base na imagem e no contexto do item falho, forneça:
               }
             }
             @media print {
-              body { padding: 14mm 0 10mm 0 !important; font-size: 9pt; }
+              body { padding: 14mm 0 8mm 0 !important; font-size: 9pt; }
               .no-break { break-inside: avoid; page-break-inside: avoid; }
               tr { page-break-inside: avoid; }
+              .print-tbody-tr, .print-tbody-td { page-break-inside: auto !important; }
             }
 
-            /* === CABEÇALHO CORRENTE (todas as páginas) === */
-            .running-header {
-              position: fixed;
-              top: 0;
-              left: 0;
-              right: 0;
+            /* === CABEÇALHO/RODAPÉ via TABLE — repete em TODAS as páginas no Chrome === */
+            .print-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+            .print-thead-td {
               height: 13mm;
-              background: #fff;
+              padding: 0;
               border-bottom: 2px solid #B5642A;
+              background: #fff;
+            }
+            .print-tfoot-td {
+              height: 7mm;
+              padding: 0;
+              border-top: 1px solid #D8D0C6;
+              background: #fff;
+            }
+            .print-tbody-td { padding: 0; }
+            .rh-wrap {
               display: flex;
-              align-items: center;
               justify-content: space-between;
-              padding: 0 1mm;
-              z-index: 1000;
-            }
-            .rh-left {
-              display: flex;
               align-items: center;
-              gap: 3mm;
-              min-width: 40mm;
+              height: 13mm;
+              padding: 0 1mm;
             }
+            .rh-left { display: flex; align-items: center; gap: 3mm; min-width: 40mm; }
             .rh-brand {
               font-family: 'Poppins', 'Inter', sans-serif;
-              font-size: 13pt;
-              font-weight: 700;
-              color: #132A41;
-              letter-spacing: -.02em;
-              white-space: nowrap;
+              font-size: 13pt; font-weight: 700;
+              color: #132A41; letter-spacing: -.02em; white-space: nowrap;
             }
             .rh-brand span { color: #B5642A; }
-            .rh-right {
-              text-align: right;
-              font-size: 7.5pt;
-              color: #4A5A66;
-              line-height: 1.45;
-            }
+            .rh-right { text-align: right; font-size: 7.5pt; color: #4A5A66; line-height: 1.45; }
             .rh-rt { font-weight: 700; color: #132A41; display: block; }
             .rh-company { color: #6B7280; display: block; }
-
-            /* === RODAPÉ CORRENTE (todas as páginas) === */
-            .running-footer {
-              position: fixed;
-              bottom: 0;
-              left: 0;
-              right: 0;
-              height: 9mm;
-              background: #fff;
-              border-top: 1px solid #D8D0C6;
+            .rf-wrap {
               display: flex;
-              align-items: center;
               justify-content: space-between;
+              align-items: center;
+              height: 7mm;
               padding: 0 1mm;
               font-size: 7.5pt;
-              z-index: 1000;
             }
-            .rf-doc {
-              font-weight: 600;
-              color: #132A41;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              max-width: 55%;
-            }
+            .rf-doc { font-weight: 600; color: #132A41; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 50%; }
             .rf-prov { color: #B5642A; font-size: 7pt; font-weight: 600; }
-            .rf-date { color: #8A949C; white-space: nowrap; }
+            .rf-page { color: #6B7280; white-space: nowrap; font-size: 7pt; }
+            .rf-page::before { content: "Pág. " counter(page) " / " counter(pages); }
 
             /* === FONTES: carregadas no início do <style> === */
 
@@ -1351,9 +1329,9 @@ Com base na imagem e no contexto do item falho, forneça:
               font-size: 13pt;
               font-weight: 700;
               color: #132A41;
-              border-bottom: 2px solid #B5642A;
-              padding-bottom: 3px;
-              margin: 8mm 0 5mm 0;
+              border-bottom: 3px solid #B5642A;
+              padding-bottom: 2mm;
+              margin: 8mm 0 4mm 0;
             }
             .sec-h .sn { color: #B5642A; }
 
@@ -1528,26 +1506,42 @@ Com base na imagem e no contexto do item falho, forneça:
           </style>
       </head>
       <body>
-          <!-- CABEÇALHO CORRENTE — aparece em todas as páginas -->
-          <div class="running-header">
-            <div class="rh-left">
-              ${profile.companyLogoBase64
-                ? `<img src="${profile.companyLogoBase64}" alt="${profile.companyName || 'Logo'}" style="max-height:10mm;max-width:50mm;object-fit:contain;">`
-                : `<span class="rh-brand">${profile.companyName || 'Amorim<span>Tech</span>'}</span>`
-              }
-            </div>
-            <div class="rh-right">
-              <span class="rh-rt">${profile.fullName} — ${profile.professionalId || ''}</span>
-              <span class="rh-company">${profile.companyName || ''}${profile.companyCnpj ? ` · CNPJ: ${profile.companyCnpj}` : ''}</span>
-            </div>
-          </div>
-
-          <!-- RODAPÉ CORRENTE — aparece em todas as páginas -->
-          <div class="running-footer">
-            <span class="rf-doc">RTIPA — ${form.buildingName.length > 45 ? form.buildingName.slice(0, 42) + '…' : form.buildingName}</span>
-            <span class="rf-prov">⚠ Documento Provisório</span>
-            <span class="rf-date">${new Date(ativa.dateCreated).toLocaleDateString('pt-BR')}</span>
-          </div>
+          <table class="print-table">
+            <!-- CABEÇALHO: repete no TOPO de TODAS as páginas (comportamento nativo do <thead> no Chrome Print) -->
+            <thead>
+              <tr>
+                <td class="print-thead-td">
+                  <div class="rh-wrap">
+                    <div class="rh-left">
+                      ${profile.companyLogoBase64
+                        ? `<img src="${profile.companyLogoBase64}" style="max-height:10mm;max-width:50mm;object-fit:contain;">`
+                        : `<span class="rh-brand">${profile.companyName || 'Amorim<span>Tech</span>'}</span>`
+                      }
+                    </div>
+                    <div class="rh-right">
+                      <span class="rh-rt">${profile.fullName} — ${profile.professionalId || ''}</span>
+                      <span class="rh-company">${profile.companyName || ''}${profile.companyCnpj ? ` · CNPJ: ${profile.companyCnpj}` : ''}</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </thead>
+            <!-- RODAPÉ: repete no FUNDO de TODAS as páginas -->
+            <tfoot>
+              <tr>
+                <td class="print-tfoot-td">
+                  <div class="rf-wrap">
+                    <span class="rf-doc">RTIPA — ${form.buildingName.length > 45 ? form.buildingName.slice(0, 42) + '…' : form.buildingName}</span>
+                    <span class="rf-prov">⚠ Documento Provisório</span>
+                    <span class="rf-page"></span>
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
+            <!-- CONTEÚDO: todo o documento dentro de uma única célula -->
+            <tbody>
+              <tr class="print-tbody-tr">
+                <td class="print-tbody-td">
 
           <!-- CAPA P4 -->
           <div class="capa">
@@ -1624,7 +1618,7 @@ Com base na imagem e no contexto do item falho, forneça:
             // Normas transversais
             html += `<p style="font-size:8.5pt;font-weight:600;color:#132A41;margin:3mm 0 1mm;">Normas transversais (todos os sistemas):</p>`;
             html += `<table style="width:100%;border-collapse:collapse;font-size:8pt;margin-bottom:4mm;">`;
-            html += `<thead><tr style="background:#132A41;color:#fff;"><th style="padding:2mm 3mm;text-align:left;width:30%">Norma</th><th style="padding:2mm 3mm;text-align:left">Título e Aplicação</th></tr></thead><tbody>`;
+            html += `<thead><tr style="background:#2C5AA0;color:#fff;"><th style="padding:2mm 3mm;text-align:left;width:30%">Norma</th><th style="padding:2mm 3mm;text-align:left">Título e Aplicação</th></tr></thead><tbody>`;
             normas.transversais.forEach((n: NormaRef, idx: number) => {
               const bg = idx % 2 === 0 ? '#fff' : '#F7F5F0';
               html += `<tr style="background:${bg};"><td style="padding:2mm 3mm;font-weight:600;color:#B5642A;vertical-align:top;">${n.codigo}</td><td style="padding:2mm 3mm;vertical-align:top;">${n.titulo}</td></tr>`;
@@ -1634,7 +1628,7 @@ Com base na imagem e no contexto do item falho, forneça:
             if (normas.porSistema.length > 0) {
               html += `<p style="font-size:8.5pt;font-weight:600;color:#132A41;margin:3mm 0 1mm;">Normas específicas dos sistemas inspecionados:</p>`;
               html += `<table style="width:100%;border-collapse:collapse;font-size:8pt;margin-bottom:4mm;">`;
-              html += `<thead><tr style="background:#132A41;color:#fff;"><th style="padding:2mm 3mm;text-align:left;width:22%">Norma</th><th style="padding:2mm 3mm;text-align:left;width:35%">Título</th><th style="padding:2mm 3mm;text-align:left">Sistema / Aplicação</th></tr></thead><tbody>`;
+              html += `<thead><tr style="background:#2C5AA0;color:#fff;"><th style="padding:2mm 3mm;text-align:left;width:22%">Norma</th><th style="padding:2mm 3mm;text-align:left;width:35%">Título</th><th style="padding:2mm 3mm;text-align:left">Sistema / Aplicação</th></tr></thead><tbody>`;
               normas.porSistema.forEach((s: any) => {
                 s.normasSistema.forEach((n: NormaRef, idx: number) => {
                   const bg = idx % 2 === 0 ? '#fff' : '#F7F5F0';
@@ -1723,6 +1717,10 @@ Com base na imagem e no contexto do item falho, forneça:
               </div>
             </div>
           </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
       </body>
       </html>
     `;
@@ -1882,7 +1880,7 @@ Com base na imagem e no contexto do item falho, forneça:
       const out: string[] = [];
       let bloco: string[] = [];
 
-      const thS = 'background:#132A41;color:#fff;padding:1.5mm 3mm;font-size:7.5pt;font-weight:700;text-align:left;border:1px solid #0d1f2f;';
+      const thS = 'background:#2C5AA0;color:#fff;padding:1.5mm 3mm;font-size:7.5pt;font-weight:700;text-align:left;border:1px solid #1a3f70;';
       const tdS = 'padding:1.5mm 3mm;font-size:8pt;border:1px solid #D8D0C6;vertical-align:top;';
       const td1S = 'padding:1.5mm 3mm;font-size:8pt;border:1px solid #D8D0C6;vertical-align:top;width:22%;font-weight:600;color:#B5642A;';
 
