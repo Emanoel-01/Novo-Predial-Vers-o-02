@@ -41,6 +41,24 @@
         <label for="companyAddress" class="block text-sm font-medium text-stone-700">Endereço da Empresa</label>
         <input type="text" id="companyAddress" [(ngModel)]="profile.companyAddress" class="mt-1 block w-full px-3 py-2 bg-white border border-stone-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500">
       </div>
+      <div class="space-y-2 pt-2 border-t border-slate-100">
+        <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+          Logo da Empresa
+          <span class="normal-case font-normal text-slate-400 ml-1">(aparece no topo do RTIPA — PNG ou JPG)</span>
+        </label>
+        <input type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+               (change)="onLogoChange($event)"
+               class="block w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer border border-slate-300 rounded-lg bg-white px-2 py-1.5">
+        @if (profile.companyLogoBase64) {
+          <div class="flex items-center gap-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+            <img [src]="profile.companyLogoBase64" alt="Logo" class="max-h-10 max-w-32 object-contain">
+            <button type="button" (click)="removerLogo()"
+                    class="text-xs text-rose-600 hover:text-rose-800 font-semibold cursor-pointer ml-auto">
+              Remover logo
+            </button>
+          </div>
+        }
+      </div>
     </div>
      <p class="text-xs text-stone-500 mt-4"> (Os dados são salvos localmente neste dispositivo para preenchimento automático dos laudos técnicos e orçamentos.)</p>
     <div class="mt-6 flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-3">

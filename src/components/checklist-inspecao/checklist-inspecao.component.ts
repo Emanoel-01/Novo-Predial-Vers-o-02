@@ -46,6 +46,14 @@ export interface Vistoria {
   tipoAmbiente?: string;            // Urbano / Rural / Industrial
   acessibilidade?: string;          // Atende / Atende Parcialmente / Não Atende
   fotosGerais?: FotoGeral[];        // fotos situacionais da edificação (max 4, JPEG comprimidas)
+  tipoUso?: string;                 // tipologia/uso da edificação (Residencial, Comercial, etc.)
+  contrato?: string;                // número ou identificação do contrato
+  contratanteCnpj?: string;         // CNPJ do contratante
+  contratanteRazaoSocial?: string;  // razão social do contratante
+  numeroOs?: string;                // número da Ordem de Serviço
+  dataOs?: string;                  // data de emissão da OS
+  nomeFiscal?: string;              // nome do fiscal do contrato
+  matriculaFiscal?: string;         // número de matrícula do fiscal
   dateCreated: string;
   dateUpdated: string;
   progress: number;
@@ -150,6 +158,14 @@ export class ChecklistInspecaoComponent implements OnInit {
   novoTipoAmbiente = signal('');
   novoAcessibilidade = signal('');
   novoFotosGerais = signal<FotoGeral[]>([]);
+  novoTipoUso = signal('');
+  novoContrato = signal('');
+  novoContratanteCnpj = signal('');
+  novoContratanteRazaoSocial = signal('');
+  novoNumeroOs = signal('');
+  novoDataOs = signal('');
+  novoNomeFiscal = signal('');
+  novoMatriculaFiscal = signal('');
   novoLat = signal<number | null>(null);
   novoLng = signal<number | null>(null);
   novoGpsAccuracy = signal<number | null>(null);
@@ -336,6 +352,14 @@ export class ChecklistInspecaoComponent implements OnInit {
     this.novoTipoAmbiente.set('');
     this.novoAcessibilidade.set('');
     this.novoFotosGerais.set([]);
+    this.novoTipoUso.set('');
+    this.novoContrato.set('');
+    this.novoContratanteCnpj.set('');
+    this.novoContratanteRazaoSocial.set('');
+    this.novoNumeroOs.set('');
+    this.novoDataOs.set('');
+    this.novoNomeFiscal.set('');
+    this.novoMatriculaFiscal.set('');
     this.novoLat.set(null);
     this.novoLng.set(null);
     this.novoGpsAccuracy.set(null);
@@ -372,6 +396,14 @@ export class ChecklistInspecaoComponent implements OnInit {
     this.novoAcessibilidade.set(vistoria.acessibilidade ?? '');
     this.novaMapaImagemBase64.set(vistoria.mapaImagemBase64 ?? null);
     this.novoFotosGerais.set(vistoria.fotosGerais ? [...vistoria.fotosGerais] : []);
+    this.novoTipoUso.set(vistoria.tipoUso ?? '');
+    this.novoContrato.set(vistoria.contrato ?? '');
+    this.novoContratanteCnpj.set(vistoria.contratanteCnpj ?? '');
+    this.novoContratanteRazaoSocial.set(vistoria.contratanteRazaoSocial ?? '');
+    this.novoNumeroOs.set(vistoria.numeroOs ?? '');
+    this.novoDataOs.set(vistoria.dataOs ?? '');
+    this.novoNomeFiscal.set(vistoria.nomeFiscal ?? '');
+    this.novoMatriculaFiscal.set(vistoria.matriculaFiscal ?? '');
     this.modoExibicao.set('EDICAO');
   }
 
@@ -390,6 +422,14 @@ export class ChecklistInspecaoComponent implements OnInit {
       acessibilidade: this.novoAcessibilidade() || undefined,
       mapaImagemBase64: this.novaMapaImagemBase64() ?? undefined,
       fotosGerais: this.novoFotosGerais().length > 0 ? [...this.novoFotosGerais()] : undefined,
+      tipoUso: this.novoTipoUso() || undefined,
+      contrato: this.novoContrato().trim() || undefined,
+      contratanteCnpj: this.novoContratanteCnpj().trim() || undefined,
+      contratanteRazaoSocial: this.novoContratanteRazaoSocial().trim() || undefined,
+      numeroOs: this.novoNumeroOs().trim() || undefined,
+      dataOs: this.novoDataOs().trim() || undefined,
+      nomeFiscal: this.novoNomeFiscal().trim() || undefined,
+      matriculaFiscal: this.novoMatriculaFiscal().trim() || undefined,
       dateUpdated: new Date().toISOString(),
     };
     const lista = this.vistorias().map(v => v.id === atualizada.id ? atualizada : v);
@@ -509,6 +549,14 @@ export class ChecklistInspecaoComponent implements OnInit {
       tipoAmbiente: this.novoTipoAmbiente() || undefined,
       acessibilidade: this.novoAcessibilidade() || undefined,
       fotosGerais: this.novoFotosGerais().length > 0 ? this.novoFotosGerais() : undefined,
+      tipoUso: this.novoTipoUso() || undefined,
+      contrato: this.novoContrato().trim() || undefined,
+      contratanteCnpj: this.novoContratanteCnpj().trim() || undefined,
+      contratanteRazaoSocial: this.novoContratanteRazaoSocial().trim() || undefined,
+      numeroOs: this.novoNumeroOs().trim() || undefined,
+      dataOs: this.novoDataOs().trim() || undefined,
+      nomeFiscal: this.novoNomeFiscal().trim() || undefined,
+      matriculaFiscal: this.novoMatriculaFiscal().trim() || undefined,
       dateCreated: new Date().toISOString(),
       dateUpdated: new Date().toISOString(),
       progress: 0,
@@ -718,7 +766,7 @@ export class ChecklistInspecaoComponent implements OnInit {
 
     const prompt = `Você é um engenheiro civil perito em manutenção e patologia predial, especialista em inspeção conforme ABNT NBR 16747 e ABNT NBR 5674.
 
-INSTRUÇÃO CRÍTICA: Responda APENAS com os 5 blocos estruturados abaixo. NÃO inclua introdução, preâmbulo, saudação nem qualquer texto antes do Bloco 1. Comece diretamente com "**1. DIAGNÓSTICO TÉCNICO**".
+INSTRUÇÃO CRÍTICA: Responda APENAS com os 6 blocos estruturados abaixo. NÃO inclua introdução, preâmbulo, saudação nem qualquer texto antes do Bloco 1. Comece diretamente com "**1. DIAGNÓSTICO TÉCNICO**".
 
 Com base nas evidências coletadas em campo para o item abaixo, redija o Memorial Descritivo de Intervenção em português técnico do Brasil.
 
@@ -738,7 +786,7 @@ ${item.notes?.trim() || 'Sem anotação de campo.'}
 
 ===== ESTRUTURA OBRIGATÓRIA DO MEMORIAL =====
 
-Redija exatamente os 5 blocos abaixo. Use Markdown: títulos com ** e listas com -.
+Redija exatamente os 6 blocos abaixo. Use Markdown: títulos com ** e listas com -.
 
 **1. DIAGNÓSTICO TÉCNICO**
 Com base nas evidências registradas em campo (fotografias, diagnóstico assistido por IA e anotações do Responsável Técnico), descreva a causa raiz confirmada e seu mecanismo de degradação. Esta é uma CONFIRMAÇÃO — não oriente investigação, a causa já está identificada.
@@ -747,13 +795,22 @@ Com base nas evidências registradas em campo (fotografias, diagnóstico assisti
 Procedimento de reparo passo a passo. Cada bloco de procedimento deve indicar expressamente a Classe de Ação conforme ABNT NBR 5674: "Imediata", "Necessária" ou "Preventiva". Dimensione os serviços usando o quantitativo de campo informado acima.
 
 **3. ESPECIFICAÇÕES TÉCNICAS — CADERNO DE ENCARGOS**
-Materiais a utilizar (com normas técnicas aplicáveis), tolerâncias de execução, controles de qualidade e critérios de aceitação para os serviços prescritos.
+Materiais, equipamentos, ferramentas e mão de obra especializada necessários (com normas técnicas e especificações do fabricante quando aplicável). Detalhar tolerâncias de execução, controles de qualidade e critérios de aceitação dos serviços.
 
 **4. MEDIDAS PREVENTIVAS**
 Ações de manutenção periódica e inspeções recomendadas para evitar reincidência após o reparo.
 
 **5. SEGURANÇA NA EXECUÇÃO**
-EPIs obrigatórios, isolamento de área, condicionantes ambientais e cuidados específicos para este tipo de serviço.`;
+EPIs obrigatórios, isolamento de área, condicionantes ambientais e cuidados específicos para este tipo de serviço.
+
+**6. NORMAS TÉCNICAS RELACIONADAS**
+Liste em tabela Markdown as normas diretamente citadas nos blocos 1 a 5 deste memorial. NÃO inclua o ano da norma no código. Use EXATAMENTE este formato de tabela:
+
+| Norma | Título e Aplicação |
+|---|---|
+| ABNT NBR XXXXX | Título da norma — aplicação específica no contexto desta intervenção |
+
+Inclua apenas as normas realmente referenciadas. Mínimo 2, máximo 8.`;
 
     try {
       const resposta = await this.geminiService.generateText(prompt);
@@ -1114,6 +1171,7 @@ Com base na imagem e no contexto do item falho, forneça:
       if (profile.companyAddress) companyInfo += `<p>${profile.companyAddress}</p>`;
     }
 
+    const secao4 = this.gerarSecao4Html(ativa);
     const secao7 = this.gerarSecao7Html(itens, evidenciasMap);
     const secao9 = this.gerarSecao9Html(itens);
 
@@ -1350,21 +1408,20 @@ Com base na imagem e no contexto do item falho, forneça:
               text-transform: uppercase;
             }
             .chancela-at {
-              margin-top: 6mm;
-              border-top: 1px solid #D8D0C6;
-              padding-top: 4mm;
-              display: flex;
-              align-items: center;
-              gap: 4mm;
+              margin-top: 8mm;
+              padding-top: 5mm;
+              border-top: 2px solid #132A41;
+              font-size: 7.5pt;
             }
             .chancela-at .at-logo {
               font-family: 'Poppins', 'Inter', sans-serif;
-              font-size: 12pt;
+              font-size: 14pt;
               font-weight: 700;
               color: #132A41;
+              letter-spacing: -.02em;
             }
             .chancela-at .at-logo span { color: #B5642A; }
-            .chancela-at .at-txt { font-size: 7.5pt; color: #8A949C; line-height: 1.6; }
+            .chancela-at .at-txt { font-size: 7.5pt; color: #4A5A66; line-height: 1.7; }
 
             /* === SEÇÃO 9 — Memorial Descritivo === */
             .s9-card { border:1px solid #D8D0C6; border-radius:6px; margin-bottom:6mm; page-break-inside:avoid; overflow:hidden; }
@@ -1418,7 +1475,10 @@ Com base na imagem e no contexto do item falho, forneça:
           <!-- CAPA P4 -->
           <div class="capa">
             <div class="capa-timbre">
-              <div class="capa-logo">Amorim<span>Tech</span></div>
+            ${profile.companyLogoBase64
+              ? `<img src="${profile.companyLogoBase64}" alt="${profile.companyName || 'Logo'}" style="max-height:16mm;max-width:70mm;object-fit:contain;display:block;">`
+              : `<div class="capa-logo">${profile.companyName || 'Amorim<span style=\'color:#B5642A\'>Tech</span>'}</div>`
+            }
               <div class="capa-empresa">
                 <b>${profile.companyName || 'AmorimTech'}</b><br>
                 ${profile.companyCnpj ? `CNPJ: ${profile.companyCnpj}<br>` : ''}
@@ -1444,15 +1504,33 @@ Com base na imagem e no contexto do item falho, forneça:
 
           <!-- SEÇÃO 1 — Identificação -->
           <h2 class="sec-h"><span class="sn">1.</span> Identificação</h2>
-          <table class="t-ident">
-            <tr><td>Empreendimento</td><td>${form.buildingName}</td></tr>
-            <tr><td>Endereço</td><td>${form.address}</td></tr>
-            <tr><td>Responsável Técnico</td><td>${profile.fullName} — ${profile.professionalId || ''}</td></tr>
-            <tr><td>Empresa / CNPJ</td><td>${profile.companyName || ''} · ${profile.companyCnpj || ''}</td></tr>
-            <tr><td>Data da vistoria</td><td>${new Date(ativa.dateCreated).toLocaleDateString('pt-BR')}</td></tr>
-            <tr><td>Última atualização</td><td>${new Date(ativa.dateUpdated).toLocaleString('pt-BR')}</td></tr>
-            ${ativa.artRrtNumero ? `<tr><td>ART / RRT</td><td>${ativa.artRrtNumero}</td></tr>` : ''}
-          </table>
+          ${(() => {
+            const tdL1 = 'background:#F7F5F0;padding:1.5mm 3mm;font-size:8pt;font-weight:600;color:#4A5A66;border:1px solid #D8D0C6;width:23%;white-space:nowrap;';
+            const tdV1 = 'padding:1.5mm 3mm;font-size:8.5pt;border:1px solid #D8D0C6;width:27%;';
+            let rows = '';
+
+            // Linha 1: Empreendimento (span completo)
+            rows += `<tr><td style="${tdL1}">Empreendimento</td><td colspan="3" style="${tdV1}">${form.buildingName}</td></tr>`;
+            // Linha 2: Endereço (span completo)
+            rows += `<tr><td style="${tdL1}">Endereço</td><td colspan="3" style="${tdV1}">${form.address}</td></tr>`;
+            // Linha 3: RT + Data da vistoria
+            rows += `<tr><td style="${tdL1}">Responsável Técnico</td><td style="${tdV1}">${profile.fullName} — ${profile.professionalId || ''}</td><td style="${tdL1}">Data da Vistoria</td><td style="${tdV1}">${new Date(ativa.dateCreated).toLocaleDateString('pt-BR')}</td></tr>`;
+            // Linha 4: Empresa + ART/RRT
+            rows += `<tr><td style="${tdL1}">Empresa / CNPJ</td><td style="${tdV1}">${profile.companyName || ''} · ${profile.companyCnpj || ''}</td>${ativa.artRrtNumero ? `<td style="${tdL1}">ART / RRT</td><td style="${tdV1}">${ativa.artRrtNumero}</td>` : `<td colspan="2" style="border:1px solid #D8D0C6;background:#fafafa;"></td>`}</tr>`;
+
+            // Campos de contrato (somente se preenchidos)
+            if (ativa.contrato || ativa.numeroOs) {
+              rows += `<tr><td style="${tdL1}">Contrato</td><td style="${tdV1}">${ativa.contrato || '—'}</td><td style="${tdL1}">N° OS</td><td style="${tdV1}">${ativa.numeroOs || '—'}</td></tr>`;
+            }
+            if (ativa.dataOs || ativa.contratanteRazaoSocial) {
+              rows += `<tr><td style="${tdL1}">Contratante</td><td style="${tdV1}">${ativa.contratanteRazaoSocial || '—'}${ativa.contratanteCnpj ? `<br><span style="font-size:7.5pt;color:#4A5A66;">CNPJ: ${ativa.contratanteCnpj}</span>` : ''}</td><td style="${tdL1}">Data da OS</td><td style="${tdV1}">${ativa.dataOs || '—'}</td></tr>`;
+            }
+            if (ativa.nomeFiscal || ativa.matriculaFiscal) {
+              rows += `<tr><td style="${tdL1}">Fiscal do Contrato</td><td style="${tdV1}">${ativa.nomeFiscal || '—'}</td><td style="${tdL1}">Matrícula</td><td style="${tdV1}">${ativa.matriculaFiscal || '—'}</td></tr>`;
+            }
+
+            return `<table style="width:100%;border-collapse:collapse;margin-bottom:4mm;">${rows}</table>`;
+          })()}
 
           <!-- SEÇÃO 2 — Objeto e Natureza -->
           <h2 class="sec-h"><span class="sn">2.</span> Objeto e Natureza da Inspeção</h2>
@@ -1504,50 +1582,7 @@ Com base na imagem e no contexto do item falho, forneça:
           })()}
 
           <!-- SEÇÃO 4 — Caracterização da Edificação -->
-          <h2 class="sec-h"><span class="sn">4.</span> Caracterização da Edificação</h2>
-          <table class="t-ident">
-            <tr><td>Denominação</td><td>${ativa.buildingName}</td></tr>
-            <tr><td>Endereço</td><td>${ativa.address}</td></tr>
-            ${ativa.codigoPatrimonial ? `<tr><td>Código Patrimonial</td><td>${ativa.codigoPatrimonial}</td></tr>` : ''}
-            ${ativa.areaConstruida ? `<tr><td>Área Construída</td><td>${ativa.areaConstruida}</td></tr>` : ''}
-            ${ativa.idadeEdificacao ? `<tr><td>Idade da Edificação</td><td>${ativa.idadeEdificacao}</td></tr>` : ''}
-            ${ativa.situacaoOperacional ? `<tr><td>Situação Operacional</td><td>${ativa.situacaoOperacional}</td></tr>` : ''}
-            ${ativa.tipoAmbiente ? `<tr><td>Tipo de Ambiente</td><td>${ativa.tipoAmbiente}</td></tr>` : ''}
-            ${ativa.acessibilidade ? `<tr><td>Acessibilidade (NBR 9050)</td><td>${ativa.acessibilidade}</td></tr>` : ''}
-            ${(ativa.lat && ativa.lng) ? `<tr><td>Coordenadas GPS</td><td>${ativa.lat.toFixed(6)}, ${ativa.lng.toFixed(6)}${ativa.gpsAccuracy ? ` · precisão ±${Math.round(ativa.gpsAccuracy)} m` : ''}</td></tr>` : ''}
-            ${(ativa.lat && ativa.lng) && !ativa.mapaImagemBase64 ? `<tr><td>Localização</td><td><a href="https://www.openstreetmap.org/?mlat=${ativa.lat}&mlon=${ativa.lng}&zoom=17" style="color:#185fa5;">Ver no mapa (OpenStreetMap)</a></td></tr>` : ''}
-          </table>
-          ${ativa.mapaImagemBase64 ? `
-            <div style="margin:3mm 0 3mm;border:1px solid #D8D0C6;border-radius:4px;overflow:hidden;">
-              <div style="background:#F7F5F0;padding:1.5mm 3mm;font-size:7.5pt;font-weight:600;color:#4A5A66;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #D8D0C6;">Mapa de Localização</div>
-              <img src="${ativa.mapaImagemBase64}" alt="Mapa de localização da edificação" style="width:100%;max-height:90mm;object-fit:contain;display:block;">
-            </div>
-          ` : ''}
-          <p style="font-size:8pt;color:#6B7280;font-style:italic;margin-bottom:4mm;">
-            ${ativa.mapaImagemBase64 ? `Imagem do mapa de localização gerada externamente e anexada pelo Responsável Técnico.` : (ativa.lat && ativa.lng) ? `Georreferenciamento capturado automaticamente no dispositivo de campo (precisão GPS do smartphone). Imagem cartográfica detalhada disponível via link acima.` : `Nota: Coordenadas GPS não capturadas nesta vistoria. Abrir o formulário de nova vistoria em campo para captura automática.`}
-          </p>
-          ${(ativa.memoriaDescritivo || ativa.objetoNatureza) ? `
-            <div style="margin:4mm 0;border-left:3px solid #B5642A;padding:3mm 4mm;background:#FAFAF8;border-radius:0 4px 4px 0;">
-              <div style="font-size:7.5pt;font-weight:700;color:#4A5A66;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2mm;">Memorial Descritivo da Edificação</div>
-              <p style="font-size:8.5pt;line-height:1.65;text-align:justify;color:#2b2b2b;margin:0;">${ativa.memoriaDescritivo || ativa.objetoNatureza}</p>
-            </div>
-          ` : ''}
-          ${(ativa.fotosGerais && ativa.fotosGerais.length > 0) ? `
-            <div style="margin:4mm 0;">
-              <div style="font-size:7.5pt;font-weight:700;color:#4A5A66;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3mm;">
-                Relatório Fotográfico Situacional
-                <span style="font-size:6.5pt;background:#F7F5F0;border:1px solid #D8D0C6;border-radius:3px;padding:1px 5px;font-weight:600;margin-left:3mm;">${ativa.fotosGerais.length} foto(s)</span>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;">
-                ${ativa.fotosGerais.map((f, i) => `
-                  <div style="border:1px solid #D8D0C6;border-radius:4px;overflow:hidden;page-break-inside:avoid;">
-                    <img src="${f.dataUrl}" alt="Foto situacional ${i+1}" style="width:100%;max-height:55mm;object-fit:cover;display:block;">
-                    <div style="padding:1.5mm 2mm;font-size:7pt;color:#4A5A66;background:#F7F5F0;">Foto ${String(i+1).padStart(2,'0')} — ${new Date(f.timestamp).toLocaleString('pt-BR')}</div>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
+          ${secao4}
 
           <!-- SEÇÃO 5 — Síntese -->
           <h2 class="sec-h"><span class="sn">5.</span> Síntese da Inspeção</h2>
@@ -1606,10 +1641,21 @@ Com base na imagem e no contexto do item falho, forneça:
             Emitido por: ${profile.fullName} — ${profile.professionalId || ''} — ${profile.companyName || ''}
           </div>
           <div class="chancela-at">
-            <div class="at-logo">Amorim<span>Tech</span></div>
-            <div class="at-txt">
-              Documento gerado pela plataforma Predial 4.0 · AmorimTech Ecossistema 4.0<br>
-              "O Predial 4.0 dá a ferramenta; o profissional assina; a AmorimTech chancela."
+            <div style="display:flex;align-items:flex-start;gap:6mm;flex-wrap:wrap;">
+              <div style="flex:0 0 auto;">
+                <div class="at-logo" style="margin-bottom:2mm;">Amorim<span>Tech</span></div>
+                <div style="font-size:7pt;color:#B5642A;font-weight:600;letter-spacing:.04em;">Ecossistema 4.0</div>
+              </div>
+              <div class="at-txt" style="flex:1;min-width:180px;">
+                <strong style="color:#1A2A38;font-size:8pt;">Predial 4.0</strong> — Plataforma de Gestão e Inteligência Predial Avançada<br>
+                Rua Leonardo Bezerra Cavalcante, 672 — Recife/PE<br>
+                <span style="color:#B5642A;">emanoel@emanoelamorim.com.br</span>
+                &nbsp;·&nbsp; (81) 99129-8803 <span style="color:#8A949C;">(WhatsApp)</span>
+                &nbsp;·&nbsp; (81) 99928-4160 <span style="color:#8A949C;">(Ligações)</span><br>
+                <a href="https://emanoelamorim.base44.app" style="color:#185fa5;font-size:7pt;">emanoelamorim.base44.app</a>
+                &nbsp;·&nbsp; CNPJ: 12.345.678/0001-90<br>
+                <span style="font-style:italic;color:#6B7280;font-size:7pt;">"O Predial 4.0 dá a ferramenta; o profissional assina; a AmorimTech chancela."</span>
+              </div>
             </div>
           </div>
       </body>
@@ -1620,6 +1666,90 @@ Com base na imagem e no contexto do item falho, forneça:
     novaJanela.document.write(htmlContent);
     novaJanela.document.close();
     setTimeout(() => novaJanela.print(), 1500);
+  }
+
+  private gerarSecao4Html(ativa: Vistoria): string {
+    const tdL = 'background:#F7F5F0;padding:1.5mm 3mm;font-size:8pt;font-weight:600;color:#4A5A66;border:1px solid #D8D0C6;width:23%;white-space:nowrap;';
+    const tdV = 'padding:1.5mm 3mm;font-size:8.5pt;border:1px solid #D8D0C6;width:27%;';
+
+    // 1) MEMORIAL DESCRITIVO — aparece primeiro
+    const memoriaHtml = (ativa.memoriaDescritivo || ativa.objetoNatureza) ? `
+      <div style="margin:0 0 4mm;border-left:3px solid #B5642A;padding:3mm 4mm;background:#FAFAF8;border-radius:0 4px 4px 0;page-break-inside:avoid;">
+        <div style="font-size:7.5pt;font-weight:700;color:#4A5A66;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2mm;">Memorial Descritivo da Edificação</div>
+        <p style="font-size:8.5pt;line-height:1.65;text-align:justify;color:#2b2b2b;margin:0;">${ativa.memoriaDescritivo || ativa.objetoNatureza}</p>
+      </div>
+    ` : '';
+
+    // 2) MAPA DE LOCALIZAÇÃO
+    const mapaHtml = ativa.mapaImagemBase64 ? `
+      <div style="margin:3mm 0;border:1px solid #D8D0C6;border-radius:4px;overflow:hidden;page-break-inside:avoid;">
+        <div style="background:#F7F5F0;padding:1.5mm 3mm;font-size:7.5pt;font-weight:600;color:#4A5A66;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #D8D0C6;">Mapa de Localização</div>
+        <img src="${ativa.mapaImagemBase64}" alt="Mapa de localização" style="width:100%;max-height:85mm;object-fit:contain;display:block;">
+      </div>
+      <p style="font-size:7.5pt;color:#6B7280;font-style:italic;margin-bottom:3mm;">Imagem do mapa de localização gerada externamente e anexada pelo Responsável Técnico.</p>
+    ` : (ativa.lat && ativa.lng) ? `
+      <p style="font-size:8pt;color:#6B7280;margin-bottom:3mm;">
+        Georreferenciamento capturado em campo: ${ativa.lat.toFixed(6)}, ${ativa.lng.toFixed(6)}${ativa.gpsAccuracy ? ` · ±${Math.round(ativa.gpsAccuracy)} m` : ''}.
+        <a href="https://www.openstreetmap.org/?mlat=${ativa.lat}&mlon=${ativa.lng}&zoom=17" style="color:#185fa5;">Ver no OpenStreetMap</a>.
+      </p>
+    ` : '';
+
+    // 3) RELATÓRIO FOTOGRÁFICO SITUACIONAL
+    const fotosHtml = (ativa.fotosGerais && ativa.fotosGerais.length > 0) ? `
+      <div style="margin:3mm 0;page-break-inside:avoid;">
+        <div style="font-size:7.5pt;font-weight:700;color:#4A5A66;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3mm;">
+          Relatório Fotográfico Situacional
+          <span style="font-size:6.5pt;background:#F7F5F0;border:1px solid #D8D0C6;border-radius:3px;padding:1px 5px;font-weight:600;margin-left:3mm;">${ativa.fotosGerais.length} foto(s)</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;">
+          ${ativa.fotosGerais.map((f: any, i: number) => `
+            <div style="border:1px solid #D8D0C6;border-radius:4px;overflow:hidden;">
+              <img src="${f.dataUrl}" alt="Foto ${i+1}" style="width:100%;max-height:55mm;object-fit:cover;display:block;">
+              <div style="padding:1.5mm 2mm;font-size:7pt;color:#4A5A66;background:#F7F5F0;">Foto ${String(i+1).padStart(2,'0')} — ${new Date(f.timestamp).toLocaleString('pt-BR')}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : '';
+
+    // 4) TABELA DE DADOS — pares de 2 colunas, sem Denominação nem Endereço
+    const campos: { l: string; v: string }[] = [];
+    if (ativa.tipoUso) campos.push({ l: 'Tipo de Uso / Tipologia', v: ativa.tipoUso });
+    if (ativa.codigoPatrimonial) campos.push({ l: 'Cód. Patrimonial', v: ativa.codigoPatrimonial });
+    if (ativa.areaConstruida) campos.push({ l: 'Área Construída', v: ativa.areaConstruida });
+    if (ativa.idadeEdificacao) campos.push({ l: 'Idade da Edificação', v: ativa.idadeEdificacao });
+    if (ativa.artRrtNumero) campos.push({ l: 'ART / RRT', v: ativa.artRrtNumero });
+    if (ativa.situacaoOperacional) campos.push({ l: 'Situação Operacional', v: ativa.situacaoOperacional });
+    if (ativa.tipoAmbiente) campos.push({ l: 'Tipo de Ambiente', v: ativa.tipoAmbiente });
+    if (ativa.acessibilidade) campos.push({ l: 'Acessibilidade (NBR 9050)', v: ativa.acessibilidade });
+    if (ativa.lat && ativa.lng) {
+      campos.push({ l: 'Coordenadas GPS', v: `${ativa.lat.toFixed(5)}, ${ativa.lng.toFixed(5)}${ativa.gpsAccuracy ? ` · ±${Math.round(ativa.gpsAccuracy)}m` : ''}` });
+    }
+
+    let tabelaHtml = '';
+    if (campos.length > 0) {
+      tabelaHtml = `<table style="width:100%;border-collapse:collapse;margin-bottom:4mm;font-size:8.5pt;">`;
+      for (let i = 0; i < campos.length; i += 2) {
+        const c1 = campos[i];
+        const c2 = campos[i + 1];
+        tabelaHtml += `<tr>
+          <td style="${tdL}">${c1.l}</td><td style="${tdV}">${c1.v}</td>
+          ${c2
+            ? `<td style="${tdL}">${c2.l}</td><td style="${tdV}">${c2.v}</td>`
+            : `<td colspan="2" style="border:1px solid #D8D0C6;background:#fafafa;"></td>`
+          }
+        </tr>`;
+      }
+      tabelaHtml += `</table>`;
+    }
+
+    return `
+      <h2 class="sec-h"><span class="sn">4.</span> Caracterização da Edificação</h2>
+      ${memoriaHtml}
+      ${mapaHtml}
+      ${fotosHtml}
+      ${tabelaHtml}
+    `;
   }
 
   private gerarSecao9Html(itens: ChecklistItem[]): string {
@@ -1677,7 +1807,7 @@ Com base na imagem e no contexto do item falho, forneça:
     if (!text) return '';
 
     const pStyle = 'margin:1.5mm 0 2mm;line-height:1.6;text-align:justify;font-size:8.5pt;color:#2b2b2b;';
-    const h3Style = 'font-size:9pt;font-weight:800;color:#fff;background:#132A41;padding:2mm 3.5mm;margin:4mm 0 2mm;border-left:3px solid #B5642A;letter-spacing:.02em;';
+    const h3Style = 'font-size:9pt;font-weight:800;color:#132A41;padding:1mm 0 1.5mm 3mm;margin:4mm 0 2mm;border-left:3px solid #B5642A;letter-spacing:.02em;border-bottom:1px solid #D8D0C6;';
     const liStyle = 'margin-bottom:1.5mm;color:#2b2b2b;line-height:1.55;';
     const ulStyle = 'margin:1.5mm 0 2.5mm 4mm;padding-left:4mm;list-style:disc;';
 

@@ -108,6 +108,28 @@
           <p class="text-[10px] text-slate-400">O endereço não pode ser editado após a criação para manter a consistência histórica do banco de dados local.</p>
         </div>
         <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Tipo de Uso / Tipologia</label>
+          <select [value]="novoTipoUso()"
+                  (change)="novoTipoUso.set($any($event.target).value)"
+                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+            <option value="">Selecione…</option>
+            <option>Residencial Unifamiliar</option>
+            <option>Residencial Multifamiliar / Condomínio</option>
+            <option>Comercial</option>
+            <option>Institucional / Público</option>
+            <option>Educacional</option>
+            <option>Hospitalar / Saúde</option>
+            <option>Industrial</option>
+            <option>Misto (Residencial + Comercial)</option>
+            <option>Patrimônio Histórico / Cultural</option>
+            <option>Religioso</option>
+            <option>Hotelaria / Hospedagem</option>
+            <option>Esportivo / Lazer</option>
+            <option>Logística / Armazenamento</option>
+            <option>Outro</option>
+          </select>
+        </div>
+        <div class="space-y-1">
           <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Código Patrimonial</label>
           <input [value]="novoCodigoPatrimonial()" 
                  (input)="novoCodigoPatrimonial.set($any($event.target).value)" 
@@ -215,6 +237,39 @@
             </div>
           }
         </div>
+        <div class="sm:col-span-2">
+          <div class="text-xs font-bold uppercase text-slate-500 tracking-wider py-2 border-t border-slate-200 mt-1 mb-3">
+            Dados Contratuais — B2G
+          </div>
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Número do Contrato</label>
+          <input [value]="novoContrato()" (input)="novoContrato.set($any($event.target).value)" placeholder="Ex: CT-2024-001" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">N° da Ordem de Serviço</label>
+          <input [value]="novoNumeroOs()" (input)="novoNumeroOs.set($any($event.target).value)" placeholder="Ex: OS-2024-0123" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Data da OS</label>
+          <input [value]="novoDataOs()" (input)="novoDataOs.set($any($event.target).value)" placeholder="Ex: 01/06/2026" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Contratante — Razão Social</label>
+          <input [value]="novoContratanteRazaoSocial()" (input)="novoContratanteRazaoSocial.set($any($event.target).value)" placeholder="Ex: Prefeitura do Recife" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">CNPJ do Contratante</label>
+          <input [value]="novoContratanteCnpj()" (input)="novoContratanteCnpj.set($any($event.target).value)" placeholder="Ex: 11.222.333/0001-44" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Nome do Fiscal do Contrato</label>
+          <input [value]="novoNomeFiscal()" (input)="novoNomeFiscal.set($any($event.target).value)" placeholder="Ex: João da Silva" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">N° de Matrícula do Fiscal</label>
+          <input [value]="novoMatriculaFiscal()" (input)="novoMatriculaFiscal.set($any($event.target).value)" placeholder="Ex: 12345-6" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
       </div>
 
       <div class="flex gap-4 pt-4 border-t border-slate-100">
@@ -276,6 +331,31 @@
                  (input)="novaIdadeEdificacao.set($any($event.target).value)" 
                  placeholder="Ex: 18 anos (construída em 2006)" 
                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+            Tipo de Uso / Tipologia da Edificação
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional)</span>
+          </label>
+          <select [value]="novoTipoUso()"
+                  (change)="novoTipoUso.set($any($event.target).value)"
+                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+            <option value="">Selecione…</option>
+            <option>Residencial Unifamiliar</option>
+            <option>Residencial Multifamiliar / Condomínio</option>
+            <option>Comercial</option>
+            <option>Institucional / Público</option>
+            <option>Educacional</option>
+            <option>Hospitalar / Saúde</option>
+            <option>Industrial</option>
+            <option>Misto (Residencial + Comercial)</option>
+            <option>Patrimônio Histórico / Cultural</option>
+            <option>Religioso</option>
+            <option>Hotelaria / Hospedagem</option>
+            <option>Esportivo / Lazer</option>
+            <option>Logística / Armazenamento</option>
+            <option>Outro</option>
+          </select>
         </div>
         <div class="space-y-1">
           <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
@@ -392,6 +472,62 @@
               <span class="font-semibold">Imagem do mapa carregada com sucesso.</span>
             </div>
           }
+        </div>
+        <!-- Campos de contrato B2G (opcional) -->
+        <div class="sm:col-span-2">
+          <div class="text-xs font-bold uppercase text-slate-500 tracking-wider py-2 border-t border-slate-200 mt-1 mb-3">
+            Dados Contratuais — B2G
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional — Lei 14.133/2021)</span>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Número do Contrato</label>
+          <input [value]="novoContrato()"
+                 (input)="novoContrato.set($any($event.target).value)"
+                 placeholder="Ex: CT-2024-001"
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">N° da Ordem de Serviço</label>
+          <input [value]="novoNumeroOs()"
+                 (input)="novoNumeroOs.set($any($event.target).value)"
+                 placeholder="Ex: OS-2024-0123"
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Data da OS</label>
+          <input [value]="novoDataOs()"
+                 (input)="novoDataOs.set($any($event.target).value)"
+                 placeholder="Ex: 01/06/2026"
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Contratante — Razão Social</label>
+          <input [value]="novoContratanteRazaoSocial()"
+                 (input)="novoContratanteRazaoSocial.set($any($event.target).value)"
+                 placeholder="Ex: Prefeitura do Recife"
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">CNPJ do Contratante</label>
+          <input [value]="novoContratanteCnpj()"
+                 (input)="novoContratanteCnpj.set($any($event.target).value)"
+                 placeholder="Ex: 11.222.333/0001-44"
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">Nome do Fiscal do Contrato</label>
+          <input [value]="novoNomeFiscal()"
+                 (input)="novoNomeFiscal.set($any($event.target).value)"
+                 placeholder="Ex: João da Silva"
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">N° de Matrícula do Fiscal</label>
+          <input [value]="novoMatriculaFiscal()"
+                 (input)="novoMatriculaFiscal.set($any($event.target).value)"
+                 placeholder="Ex: 12345-6"
+                 class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
         </div>
       </div>
 
