@@ -1,5 +1,17 @@
 import { Injectable } from '@angular/core';
 
+export interface NormaRef {
+  codigo: string;
+  titulo: string;
+  aplicacao: string;
+  status: 'CONFIRMADO' | 'PENDENTE';
+}
+
+export interface NormasSistema {
+  sistema: NormaRef[];
+  tipologias: { [tipologiaTitle: string]: NormaRef[] };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -659,6 +671,340 @@ export class DataService {
         }
     }
 };
+
+  // ── Camada 0: normas transversais (aplicam-se a TODOS os sistemas) ──────────
+  readonly normasTransversais: NormaRef[] = [
+    { codigo: 'ABNT NBR 16747', titulo: 'Inspeção predial — Diretrizes, conceitos, terminologia e procedimento', aplicacao: 'Metodologia base para toda a inspeção predial, classificação de risco e emissão do RTIPA.', status: 'CONFIRMADO' },
+    { codigo: 'ABNT NBR 5674', titulo: 'Manutenção de edificações — Requisitos para o sistema de gestão de manutenção', aplicacao: 'Auditoria do plano de manutenção preventiva e verificação de cronogramas por sistema.', status: 'CONFIRMADO' },
+    { codigo: 'ABNT NBR 14037', titulo: 'Diretrizes para elaboração de manuais de uso, operação e manutenção das edificações', aplicacao: 'Verificação se o manual do imóvel foi entregue e contém os limites de carga e diretrizes de conservação.', status: 'CONFIRMADO' },
+    { codigo: 'ABNT NBR 16280', titulo: 'Reforma em edificações — Sistema de gestão de reformas — Requisitos', aplicacao: 'Auditoria de reformas realizadas nas unidades para verificar comprometimento do sistema estrutural ou de vedação.', status: 'CONFIRMADO' },
+    { codigo: 'ABNT NBR 15575-1', titulo: 'Edificações habitacionais — Desempenho — Parte 1: Requisitos gerais', aplicacao: 'Parâmetros gerais de desempenho e vida útil de projeto (VUP) aplicáveis a todos os sistemas.', status: 'CONFIRMADO' },
+    { codigo: 'ABNT NBR 17170', titulo: 'Edificações — Garantias — Prazos recomendados e diretrizes', aplicacao: 'Determinação dos prazos de garantia para subsidiar responsabilização técnica.', status: 'CONFIRMADO' },
+  ];
+
+  // ── Camada 1+2: normas por sistema e por tipologia ──────────────────────────
+  readonly normasPorSistema: { [systemTitle: string]: NormasSistema } = {
+
+    'Sistemas Estruturais': {
+      sistema: [
+        { codigo: 'ABNT NBR 6118', titulo: 'Projeto de estruturas de concreto', aplicacao: 'Critérios de durabilidade, cobrimento, fissuração e dimensionamento para concreto armado e protendido.', status: 'CONFIRMADO' },
+        { codigo: 'ABNT NBR 14931', titulo: 'Execução de estruturas de concreto armado, protendido e com fibras — Requisitos', aplicacao: 'Verificação de conformidade executiva: tolerâncias, segregação, lançamento e cura.', status: 'CONFIRMADO' },
+        { codigo: 'ABNT NBR 8800', titulo: 'Projeto de estruturas de aço e de estruturas mistas de aço e concreto de edificações', aplicacao: 'Avaliação de integridade, deformações (flambagem) e corrosão em perfis metálicos.', status: 'CONFIRMADO' },
+        { codigo: 'ABNT NBR 7190-1', titulo: 'Projeto de estruturas de madeira — Parte 1: Critérios de dimensionamento', aplicacao: 'Limites de umidade, deformação e integridade para estruturas de madeira.', status: 'CONFIRMADO' },
+        { codigo: 'ABNT NBR 8681', titulo: 'Ações e segurança nas estruturas', aplicacao: 'Critérios de quantificação de ações e combinações de carga para segurança estrutural.', status: 'CONFIRMADO' },
+        { codigo: 'ABNT NBR 15575-2', titulo: 'Edificações habitacionais — Desempenho — Parte 2: Requisitos para os sistemas estruturais', aplicacao: 'Parâmetros de desempenho estrutural, VUP e estados limites de fissuração.', status: 'PENDENTE' },
+      ],
+      tipologias: {
+        'Concreto armado in loco': [
+          { codigo: 'ABNT NBR 6118', titulo: 'Projeto de estruturas de concreto', aplicacao: 'Larguras-limite de fissuras e taxas mínimas de cobrimento.', status: 'CONFIRMADO' },
+          { codigo: 'ABNT NBR 14931', titulo: 'Execução de estruturas de concreto armado, protendido e com fibras', aplicacao: 'Controle de vibração, segregação ("bicheiras") and cura.', status: 'CONFIRMADO' },
+        ],
+        'Concreto protendido': [
+          { codigo: 'ABNT NBR 6118', titulo: 'Projeto de estruturas de concreto', aplicacao: 'Verificação de flechas e larguras de fissuras em lajes e vigas protendidas.', status: 'CONFIRMADO' },
+          { codigo: 'ABNT NBR 7483', titulo: 'Cordoalhas de aço para estruturas de concreto protendido — Especificação', aplicacao: 'Qualidade das cordoalhas e análise de perdas de protensão.', status: 'CONFIRMADO' },
+        ],
+        'Alvenaria estrutural': [
+          { codigo: 'ABNT NBR 16868-1', titulo: 'Alvenaria estrutural — Parte 1: Projeto', aplicacao: 'Limites de esbeltez, distribuição de cargas e estados limites de fissuração.', status: 'CONFIRMADO' },
+          { codigo: 'ABNT NBR 16868-2', titulo: 'Alvenaria estrutural — Parte 2: Execução e controle de obras', aplicacao: 'Falhas executivas: ausência de grauteamento, juntas de argamassa irregulares.', status: 'CONFIRMADO' },
+          { codigo: 'ABNT NBR 16868-3', titulo: 'Alvenaria estrutural — Parte 3: Métodos de ensaio', aplicacao: 'Ensaios de prismas para verificação de resistência do sistema.', status: 'CONFIRMADO' },
+        ],
+        'Estrutura metálica': [
+          { codigo: 'ABNT NBR 8800', titulo: 'Projeto de estruturas de aço e de estruturas mistas', aplicacao: 'Flambagem de perfis, conexões soldadas/parafusadas e proteção anticorrosiva.', status: 'CONFIRMADO' },
+        ],
+        'Estrutura de madeira': [
+          { codigo: 'ABNT NBR 7190-1', titulo: 'Projeto de estruturas de madeira — Parte 1', aplicacao: 'Flechas-limite e comportamento de peças serradas ou lameladas.', status: 'CONFIRMADO' },
+        ],
+        'Steel frame': [
+          { codigo: 'ABNT NBR 16970-1', titulo: 'Light Steel Framing — Sistemas construtivos estruturais leves — Parte 1: Desempenho', aplicacao: 'Rigidez, proteção contra corrosão galvânica e estanqueidade mecânica.', status: 'PENDENTE' },
+        ],
+        'Wood frame': [
+          { codigo: 'ABNT NBR 16936', titulo: 'Edificações em wood frame — Diretrizes para projeto, execução e controle', aplicacao: 'Controle de umidade em painéis de madeira e estabilidade do esqueleto estrutural.', status: 'PENDENTE' },
+        ],
+        'Painéis CLT (Cross Laminated Timber)': [
+          { codigo: 'ABNT NBR 7190-7', titulo: 'Projeto de estruturas de madeira — Parte 7: Ensaios para madeira lamelada colada cruzada', aplicacao: 'Verificação de painéis CLT e detecção de delaminação.', status: 'CONFIRMADO' },
+        ],
+        'Pré-moldados de concreto': [
+          { codigo: 'ABNT NBR 9062', titulo: 'Projeto e execução de estruturas de concreto pré-moldado', aplicacao: 'Patologias em ligações viga-pilar, consolos, dentes Gerber e juntas de dilatação.', status: 'CONFIRMADO' },
+        ],
+      },
+    },
+
+    'Sistemas de Fundações': {
+      sistema: [
+        { codigo: 'ABNT NBR 6122', titulo: 'Projeto e execução de fundações', aplicacao: 'Norma mater: parâmetros de estabilidade, recalques e diretrizes executivas para todas as tipologias.', status: 'CONFIRMADO' },
+        { codigo: 'ABNT NBR 15575-2', titulo: 'Edificações habitacionais — Desempenho — Parte 2: Sistemas estruturais', aplicacao: 'Limites de deformação e VUP aplicáveis às fundações em habitações.', status: 'CONFIRMADO' },
+        { codigo: 'ABNT NBR 6484', titulo: 'Solo — Sondagem de simples reconhecimento com SPT — Método de ensaio', aplicacao: 'Análise documental: confronto do perfil N-SPT com recalques observados na superestrutura.', status: 'PENDENTE' },
+      ],
+      tipologias: {
+        'Sapata isolada': [
+          { codigo: 'ABNT NBR 6489', titulo: 'Solo — Prova de carga estática em fundação direta', aplicacao: 'Verificação da capacidade de carga e recalque em fundações rasas.', status: 'PENDENTE' },
+        ],
+        'Sapata corrida': [
+          { codigo: 'ABNT NBR 6489', titulo: 'Solo — Prova de carga estática em fundação direta', aplicacao: 'Verificação de capacidade de carga em fundações lineares.', status: 'PENDENTE' },
+        ],
+        'Viga baldrame': [
+          { codigo: 'ABNT NBR 6118', titulo: 'Projeto de estruturas de concreto', aplicacao: 'Dimensionamento do concreto armado e cobrimento mínimo das armaduras.', status: 'CONFIRMADO' },
+          { codigo: 'ABNT NBR 9574', titulo: 'Execução de impermeabilização', aplicacao: 'Impermeabilização da viga para barreira contra umidade ascendente.', status: 'CONFIRMADO' },
+        ],
+        'Radier': [
+          { codigo: 'ABNT NBR 6489', titulo: 'Solo — Prova de carga estática em fundação direta', aplicacao: 'Verificação da capacidade de suporte e recalques do radier.', status: 'PENDENTE' },
+          { codigo: 'ABNT NBR 9575', titulo: 'Impermeabilização — Seleção e projeto', aplicacao: 'Impermeabilização do radier contra infiltração ascendente.', status: 'CONFIRMADO' },
+        ],
+        'Estaca hélice contínua': [
+          { codigo: 'ABNT NBR 6122', titulo: 'Projeto e execução de fundações (Anexo J/O)', aplicacao: 'Controle de execução, pressão de injeção e detecção de estrangulamento do fuste.', status: 'CONFIRMADO' },
+          { codigo: 'ABNT NBR 16903', titulo: 'Solo — Prova de carga estática em fundação profunda', aplicacao: 'Comprovação da capacidade de carga della estaca.', status: 'CONFIRMADO' },
+          { codigo: 'ABNT NBR 13208', titulo: 'Estacas — Ensaios de carregamento dinâmico', aplicacao: 'Ensaio PDA/PIT para detecção de falhas no fuste e avaliação dinâmica de carga.', status: 'PENDENTE' },
+        ],
+        'Estaca Strauss': [
+          { codigo: 'ABNT NBR 6122', titulo: 'Projeto e execução de fundações (Anexo G)', aplicacao: 'Avaliação patológica baseada nas diretrizes do Anexo G.', status: 'CONFIRMADO' },
+        ],
+        'Estaca pré-moldada': [
+          { codigo: 'ABNT NBR 16258', titulo: 'Estacas pré-fabricadas de concreto — Requisitos', aplicacao: 'Avaliação de trincas, fissuras de cravação e tolerâncias dimensionais.', status: 'PENDENTE' },
+          { codigo: 'ABNT NBR 9062', titulo: 'Projeto e execução de estruturas de concreto pré-moldado', aplicacao: 'Falhas no concreto pré-moldado e corrosão de armaduras.', status: 'CONFIRMADO' },
+          { codigo: 'ABNT NBR 16903', titulo: 'Solo — Prova de carga estática em fundação profunda', aplicacao: 'Verificação da capacidade de carga após a cravação.', status: 'CONFIRMADO' },
+        ],
+        'Estaca metálica': [
+          { codigo: 'ABNT NBR 8800', titulo: 'Projeto de estruturas de aço', aplicacao: 'Cálculo da espessura de sacrifício e avaliação de corrosão galvânica.', status: 'CONFIRMADO' },
+          { codigo: 'ABNT NBR 17007', titulo: 'Soldagem de aços para emendas de estacas de fundações — Requisitos', aplicacao: 'Inspeção de continuidade e falhas nas soldas de emenda.', status: 'PENDENTE' },
+        ],
+        'Tubulão': [
+          { codigo: 'ABNT NBR 6122', titulo: 'Projeto e execução de fundações', aplicacao: 'Análise da base, dimensões do alargamento e inspeção do maciço de apoio.', status: 'CONFIRMADO' },
+        ],
+        'Microestaca': [
+          { codigo: 'ABNT NBR 6122', titulo: 'Projeto e execução de fundações (Anexo M/K)', aplicacao: 'Diretrizes de injeção e limites de capacidade de carga.', status: 'CONFIRMADO' },
+        ],
+      },
+    },
+
+    'Sistemas de Vedação e Revestimento Externo': {
+      sistema: [
+        { codigo: 'ABNT NBR 15575-4', titulo: 'Edificações habitacionais — Desempenho — Parte 4: Sistemas de vedações verticais internas e externas', aplicacao: 'Métricas de estanqueidade, desempenho térmico, acústico e VUP das fachadas.', status: 'PENDENTE' },
+      ],
+      tipologias: {
+        'Painéis de concreto': [
+          { codigo: 'ABNT NBR 16475', titulo: 'Painéis de parede de concreto pré-moldado — Requisitos e procedimentos', aplicacao: 'Integridade das fixações mecânicas, juntas de dilatação e selantes.', status: 'PENDENTE' },
+        ],
+        'ACM (Aluminum Composite Material)': [
+          { codigo: 'ABNT NBR 15446', titulo: 'Painéis de material composto de alumínio utilizados em fachadas', aplicacao: 'Verificação da espessura do compósito e estabilidade dos fixadores.', status: 'PENDENTE' },
+        ],
+        'Revestimento cerâmico externo': [
+          { codigo: 'ABNT NBR 13755', titulo: 'Revestimentos cerâmicos de fachadas com argamassa colante — Projeto, execução, inspeção e aceitação', aplicacao: 'Investigação de desplacamentos, som cavo e juntas de movimentação.', status: 'PENDENTE' },
+        ],
+        'Pastilhas': [
+          { codigo: 'ABNT NBR 13755', titulo: 'Revestimentos cerâmicos de fachadas com argamassa colante', aplicacao: 'Inspeção de aderência, som cavo e desplacamento de pastilhas.', status: 'PENDENTE' },
+        ],
+        'Argamassa (reboco / monocapa)': [
+          { codigo: 'ABNT NBR 13749', titulo: 'Revestimento de paredes e tetos de argamassas inorgânicas — Especificação', aplicacao: 'Espessura admissível, aderência e mapeamento de fissuras.', status: 'PENDENTE' },
+        ],
+        'Pintura acrílica ou elastomérica': [
+          { codigo: 'ABNT NBR 13245', titulo: 'Tintas para construção civil — Execução de pinturas — Preparação de superfície', aplicacao: 'Investigação de descascamentos, bolhas, eflorescência e falhas de preparo do substrato.', status: 'PENDENTE' },
+        ],
+      },
+    },
+
+    'Sistemas de Cobertura': {
+      sistema: [
+        { codigo: 'ABNT NBR 15575-5', titulo: 'Edificações habitacionais — Desempenho — Parte 5: Sistemas de coberturas', aplicacao: 'Estanqueidade, resistência a cargas de vento e VUP das coberturas.', status: 'PENDENTE' },
+        { codigo: 'ABNT NBR 9575', titulo: 'Impermeabilização — Seleção e projeto', aplicacao: 'Adequação da tipologia de impermeabilização ao tipo de pressão d\'água (positiva/negativa).', status: 'CONFIRMADO' },
+        { codigo: 'ABNT NBR 9574', titulo: 'Execução de impermeabilização', aplicacao: 'Avaliação de patologias de execução: arremates falhos em ralos, rufos e caimentos.', status: 'CONFIRMADO' },
+      ],
+      tipologias: {
+        'Telhado cerâmico': [
+          { codigo: 'ABNT NBR 15310', titulo: 'Componentes cerâmicos — Telhas — Terminologia, requisitos e métodos de ensaio', aplicacao: 'Absorção de água, eflorescência, empenamento e quebras de telhas.', status: 'PENDENTE' },
+        ],
+        'Telhado de concreto': [
+          { codigo: 'ABNT NBR 13858-1', titulo: 'Telhas de concreto — Parte 1: Projeto e execução de telhados', aplicacao: 'Inclinações mínimas, sobreposição e amarrações de telhas de concreto.', status: 'PENDENTE' },
+        ],
+        'Telhado fibrocimento': [
+          { codigo: 'ABNT NBR 15210-1', titulo: 'Telhas onduladas e peças complementares de fibrocimento sem amianto — Parte 1', aplicacao: 'Microfissuras (gerçuras), degradação e integridade mecânica das telhas.', status: 'PENDENTE' },
+        ],
+        'Manta asfáltica': [
+          { codigo: 'ABNT NBR 9952', titulo: 'Manta asfáltica para impermeabilização', aplicacao: 'Diagnóstico de bolhas (blistering), perda de espessura e descolamento de juntas.', status: 'PENDENTE' },
+        ],
+        'Membrana EPDM / PVC': [
+          { codigo: 'ABNT NBR 16184', titulo: 'Membrana sintética de cloreto de polivinila (PVC) para impermeabilização', aplicacao: 'Falhas nas termossoldas, retração e fragilização por raios UV.', status: 'PENDENTE' },
+        ],
+      },
+    },
+
+    'Sistemas de Impermeabilização': {
+      sistema: [
+        { codigo: 'ABNT NBR 9575', titulo: 'Impermeabilização — Seleção e projeto', aplicacao: 'Adequação da tipologia ao tipo de pressão d\'água e ao substrato.', status: 'CONFIRMADO' },
+        { codigo: 'ABNT NBR 9574', titulo: 'Execução de impermeabilização', aplicacao: 'Avaliação de falhas de execução visíveis: arremates, rodapés, caimentos.', status: 'CONFIRMADO' },
+      ],
+      tipologias: {
+        'Manta asfáltica': [
+          { codigo: 'ABNT NBR 9952', titulo: 'Manta asfáltica para impermeabilização', aplicacao: 'Bolhas (blistering), emendas abertas, ressecamento e furos.', status: 'PENDENTE' },
+        ],
+        'Membrana EPDM / PVC': [
+          { codigo: 'ABNT NBR 16184', titulo: 'Membrana sintética de PVC para impermeabilização', aplicacao: 'Furos, retração e falhas em juntas de termossoldagem.', status: 'PENDENTE' },
+        ],
+        'Emulsão asfáltica': [
+          { codigo: 'ABNT NBR 9685', titulo: 'Emulsão asfáltica sem carga para impermeabilização', aplicacao: 'Lavagem do produto, falha na formação de película e incompatibilidade de substrato.', status: 'PENDENTE' },
+        ],
+      },
+    },
+
+    'Sistemas Hidrossanitários': {
+      sistema: [
+        { codigo: 'ABNT NBR 15575-6', titulo: 'Edificações habitacionais — Desempenho — Parte 6: Sistemas hidrossanitários', aplicacao: 'Requisitos de desempenho e VUP para sistemas prediais de água e esgoto.', status: 'CONFIRMADO' },
+      ],
+      tipologias: {
+        'Água fria (PVC, PPR, PEX, cobre)': [
+          { codigo: 'ABNT NBR 5626', titulo: 'Sistemas prediais de água fria e água quente — Projeto, execução, operação e manutenção', aplicacao: 'Inspeção de pressões, potabilidade, estanqueidade e integridade de conexões.', status: 'CONFIRMADO' },
+        ],
+        'Água quente (CPVC, PEX, cobre)': [
+          { codigo: 'ABNT NBR 5626', titulo: 'Sistemas prediais de água fria e água quente', aplicacao: 'Isolamento térmico, pressões e prevenção de golpe de aríete.', status: 'CONFIRMADO' },
+        ],
+        'Esgoto (PVC, PEAD)': [
+          { codigo: 'ABNT NBR 8160', titulo: 'Sistemas prediais de esgoto sanitário — Projeto e execução', aplicacao: 'Ventilação da rede, selos hídricos e escoamento adequado.', status: 'CONFIRMADO' },
+        ],
+        'Água pluvial': [
+          { codigo: 'ABNT NBR 10844', titulo: 'Instalações prediais de águas pluviais — Procedimento', aplicacao: 'Calhas, condutores, dimensionamento e obstrução de ralos.', status: 'CONFIRMADO' },
+        ],
+        'Reuso de água cinza': [
+          { codigo: 'ABNT NBR 15527', titulo: 'Água de chuva — Aproveitamento para fins não potáveis — Requisitos', aplicacao: 'Qualidade da água, tanques de armazenamento e sistemas de filtragem.', status: 'CONFIRMADO' },
+        ],
+        'Aproveitamento de água da chuva': [
+          { codigo: 'ABNT NBR 15527', titulo: 'Água de chuva — Aproveitamento para fins não potáveis', aplicacao: 'Qualidade, armazenamento e prevenção de contaminação cruzada.', status: 'CONFIRMADO' },
+        ],
+        'Sistema de aquecimento (solar, gás, elétrico)': [
+          { codigo: 'ABNT NBR 15569', titulo: 'Sistemas de aquecimento solar de água — Projeto e instalação', aplicacao: 'Coletores, isolamento térmico e segurança do sistema solar.', status: 'CONFIRMADO' },
+        ],
+      },
+    },
+
+    'Sistema de Gás Combustível': {
+      sistema: [
+        { codigo: 'ABNT NBR 15526', titulo: 'Redes de distribuição interna para gases combustíveis em instalações residenciais e comerciais — Projeto e execução', aplicacao: 'Estanqueidade, pressão e segurança em tubulações de GLP e GN.', status: 'CONFIRMADO' },
+      ],
+      tipologias: {
+        'GLP - Gás Liquefeito de Petróleo': [{ codigo: 'ABNT NBR 15526', titulo: 'Redes de distribuição interna para gases combustíveis', aplicacao: 'Central de GLP: armazenamento, regulagem, ventilação e estanqueidade.', status: 'CONFIRMADO' }],
+        'GN - Gás Natural': [{ codigo: 'ABNT NBR 15526', titulo: 'Redes de distribuição interna para gases combustíveis', aplicacao: 'Distribuição, medição e segurança na rede de GN.', status: 'CONFIRMADO' }],
+        'Tubulação de Aço-Carbono': [{ codigo: 'ABNT NBR 15526', titulo: 'Redes de distribuição interna para gases combustíveis', aplicacao: 'Corrosão externa, conexões roscadas e estanqueidade em aço-carbono.', status: 'CONFIRMADO' }],
+        'Tubulação de Cobre': [{ codigo: 'ABNT NBR 15526', titulo: 'Redes de distribuição interna para gases combustíveis', aplicacao: 'Qualidade das soldas (brasagem) e integridade de tubulações de cobre.', status: 'CONFIRMADO' }],
+        'Tubulação PEX Multicamadas': [{ codigo: 'ABNT NBR 15526', titulo: 'Redes de distribuição interna para gases combustíveis', aplicacao: 'Prensagem de conexões e exposição a raios UV.', status: 'CONFIRMADO' }],
+      },
+    },
+
+    'Sistemas Elétricos': {
+      sistema: [
+        { codigo: 'ABNT NBR 5410', titulo: 'Instalações elétricas de baixa tensão', aplicacao: 'Inspeção geral de quadros, cabos, circuitos, aterramento e proteções.', status: 'CONFIRMADO' },
+      ],
+      tipologias: {
+        'Quadros elétricos': [{ codigo: 'ABNT NBR 5410', titulo: 'Instalações elétricas de baixa tensão', aplicacao: 'Sobreaquecimento de disjuntores, oxidação de barramentos e aterramento.', status: 'CONFIRMADO' }],
+        'Fios e cabos (cobre, alumínio)': [{ codigo: 'ABNT NBR 5410', titulo: 'Instalações elétricas de baixa tensão', aplicacao: 'Ressecamento de isolação, fuga de corrente e bitola adequada.', status: 'CONFIRMADO' }],
+        'Energia fotovoltaica': [
+          { codigo: 'ABNT NBR 16690', titulo: 'Instalações elétricas de arranjos fotovoltaicos — Requisitos de projeto', aplicacao: 'Inspeção de inversores, módulos e hotspots em painéis fotovoltaicos.', status: 'CONFIRMADO' },
+          { codigo: 'ABNT NBR 16274', titulo: 'Sistemas fotovoltaicos conectados à rede — Requisitos mínimos', aplicacao: 'Comissionamento, segurança e desempenho de sistemas FV.', status: 'CONFIRMADO' },
+        ],
+      },
+    },
+
+    'Climatização e Exaustão': {
+      sistema: [
+        { codigo: 'ABNT NBR 5410', titulo: 'Instalações elétricas de baixa tensão', aplicacao: 'Infraestrutura elétrica de alimentação de unidades de ar-condicionado, bombas e ventiladores.', status: 'CONFIRMADO' },
+        { codigo: 'ABNT NBR 16401', titulo: 'Instalações de ar-condicionado — Sistemas centrais e unitários', aplicacao: 'Renovação do ar, conforto térmico, filtragem e eficiência energética.', status: 'PENDENTE' },
+      ],
+      tipologias: {
+        'Pressurização de escadas': [
+          { codigo: 'ABNT NBR 14880', titulo: 'Saídas de emergência — Escada de segurança — Controle de fumaça por pressurização', aplicacao: 'Diferenciais de pressão, velocidade do ar nas portas e acionamento automático.', status: 'PENDENTE' },
+        ],
+        'Exaustores em garagem e cozinha': [
+          { codigo: 'ABNT NBR 14518', titulo: 'Sistemas de ventilação para cozinhas profissionais', aplicacao: 'Acúmulo de gordura em dutos e intertravamento com sistemas de incêndio.', status: 'PENDENTE' },
+        ],
+      },
+    },
+
+    'Sistemas de Incêndio e SPDA': {
+      sistema: [
+        { codigo: 'ABNT NBR 5410', titulo: 'Instalações elétricas de baixa tensão', aplicacao: 'Infraestrutura elétrica de bombas de incêndio, central de alarme e SPDA.', status: 'CONFIRMADO' },
+      ],
+      tipologias: {
+        'Hidrantes e mangotinhos': [
+          { codigo: 'ABNT NBR 13714', titulo: 'Sistemas de hidrantes e de mangotinhos para combate a incêndio', aplicacao: 'Pressão, integridade de mangueiras, esguichos, engates e registros de recalque.', status: 'PENDENTE' },
+        ],
+        'Sprinklers (chuveiros automáticos)': [
+          { codigo: 'ABNT NBR 10897', titulo: 'Sistemas de proteção contra incêndio por chuveiros automáticos — Requisitos', aplicacao: 'Bicos obstruídos, alarmes de fluxo, reserva técnica e bombas.', status: 'PENDENTE' },
+        ],
+        'Extintores': [
+          { codigo: 'ABNT NBR 12693', titulo: 'Sistemas de proteção por extintores de incêndio', aplicacao: 'Validade (teste hidrostático), integridade, desobstrução e carga adequada.', status: 'PENDENTE' },
+        ],
+        'Detectores e alarmes': [
+          { codigo: 'ABNT NBR 17240', titulo: 'Sistemas de detecção e alarme de incêndio — Projeto, instalação, comissionamento e manutenção', aplicacao: 'Acionadores manuais, baterias, laços e sirenes.', status: 'PENDENTE' },
+        ],
+        'Central de alarme (SACI)': [
+          { codigo: 'ABNT NBR 17240', titulo: 'Sistemas de detecção e alarme de incêndio', aplicacao: 'Central endereçável, zonas de alarme e interligação com elevadores e pressurização.', status: 'PENDENTE' },
+        ],
+        'SPDA (Sistema de Proteção contra Descargas Atmosféricas)': [
+          { codigo: 'ABNT NBR 5419', titulo: 'Proteção contra descargas atmosféricas (Partes 1 a 4)', aplicacao: 'Continuidade das descidas, integridade das malhas de aterramento e captores.', status: 'PENDENTE' },
+        ],
+      },
+    },
+
+    'Transporte Vertical': {
+      sistema: [],
+      tipologias: {
+        'Elevadores elétricos': [
+          { codigo: 'ABNT NBR 16858', titulo: 'Elevadores — Requisitos de segurança para construção e instalação (Partes 1 e 2)', aplicacao: 'Cabos de tração, freios, contatos de porta, nivelamento e segurança.', status: 'PENDENTE' },
+        ],
+        'Elevadores hidráulicos': [
+          { codigo: 'ABNT NBR 16858', titulo: 'Elevadores — Requisitos de segurança para construção e instalação', aplicacao: 'Pistão hidráulico, selos, operação e nivelamento.', status: 'PENDENTE' },
+        ],
+        'Escadas rolantes': [
+          { codigo: 'ABNT NBR 16723-1', titulo: 'Escadas rolantes e esteiras rolantes — Parte 1: Requisitos de segurança', aplicacao: 'Rodapés, pentes, corrimãos e botão de parada de emergência.', status: 'PENDENTE' },
+        ],
+        'Plataformas de acessibilidade': [
+          { codigo: 'ABNT NBR ISO 9386-1', titulo: 'Plataformas de elevação motorizadas para pessoas com mobilidade reduzida', aplicacao: 'Portas, sensores antiesmagamento e percurso de operação.', status: 'PENDENTE' },
+        ],
+        'Monta-cargas': [
+          { codigo: 'ABNT NBR 14712', titulo: 'Elevadores de carga, monta-cargas e elevadores de maca', aplicacao: 'Cabina, portas de pavimento e limites de carga.', status: 'PENDENTE' },
+        ],
+      },
+    },
+
+    'Comunicação e Segurança Interna': {
+      sistema: [
+        { codigo: 'ABNT NBR 5410', titulo: 'Instalações elétricas de baixa tensão', aplicacao: 'Infraestrutura de cabeamento elétrico que suporta os sistemas de comunicação e segurança.', status: 'CONFIRMADO' },
+      ],
+      tipologias: {
+        'Cabeamento estruturado': [
+          { codigo: 'ABNT NBR 14565', titulo: 'Cabeamento estruturado para edifícios comerciais e data centers', aplicacao: 'Racks, identificação de cabos e infraestrutura de rede predial.', status: 'PENDENTE' },
+        ],
+      },
+    },
+
+    'Paisagismo e Irrigação': {
+      sistema: [
+        { codigo: 'ABNT NBR 9575', titulo: 'Impermeabilização — Seleção e projeto', aplicacao: 'Estanqueidade de floreiras, espelhos d\'água e jardins verticais.', status: 'CONFIRMADO' },
+      ],
+      tipologias: {
+        'Espelho d\'água': [
+          { codigo: 'ABNT NBR 9575', titulo: 'Impermeabilização — Seleção e projeto', aplicacao: 'Estanqueidade do espelho d\'água e prevenção de infiltrações no entorno.', status: 'CONFIRMADO' },
+        ],
+      },
+    },
+
+  };
+
+  // ── Método auxiliar: retorna normas aplicáveis aos sistemas de uma vistoria ──
+  getNormasParaRTIPA(systemTitlesUsados: string[]): {
+    transversais: NormaRef[];
+    porSistema: { titulo: string; normasSistema: NormaRef[] }[];
+  } {
+    const porSistema = systemTitlesUsados
+      .filter(t => this.normasPorSistema[t])
+      .map(titulo => ({
+        titulo,
+        normasSistema: this.normasPorSistema[titulo].sistema,
+      }))
+      .filter(s => s.normasSistema.length > 0);
+    return { transversais: this.normasTransversais, porSistema };
+  }
+
+  getNormasTipologia(systemTitle: string, tipologiaTitle: string): NormaRef[] {
+    return this.normasPorSistema[systemTitle]?.tipologias?.[tipologiaTitle] ?? [];
+  }
 
   getData(): any {
     return this.appData;

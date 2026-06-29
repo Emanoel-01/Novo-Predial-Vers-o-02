@@ -102,6 +102,17 @@
                  placeholder="Ex: Rua das Palmeiras, 450 - Bairro Novo" 
                  class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
         </div>
+        <div class="sm:col-span-2 space-y-1">
+          <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
+            Objeto e Natureza da Inspeção
+            <span class="normal-case font-normal text-slate-400 ml-1">(opcional — aparece na Seção 2 do RTIPA)</span>
+          </label>
+          <textarea [value]="novoObjetoNatureza()"
+                    (input)="novoObjetoNatureza.set($any($event.target).value)"
+                    rows="3"
+                    placeholder="Ex: Inspeção periódica de rotina por determinação da Lei Municipal de Inspeção Predial, abrangendo estrutura, cobertura, fachada e instalações. Período de referência: 2026."
+                    class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></textarea>
+        </div>
         <div class="space-y-1">
           <label class="block text-xs font-bold uppercase text-slate-600 tracking-wider">
             Área Construída
@@ -181,9 +192,19 @@
         <button (click)="cancelarCriacao()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors active:scale-95">
           Cancelar
         </button>
-        <button (click)="criarVistoria()" class="flex-1 bg-sky-700 hover:bg-sky-800 text-white font-bold py-3 rounded-xl text-sm transition-colors shadow-md active:scale-95">
-          Gerar Prancheta e Iniciar Vistoria
-        </button>
+        <div class="flex-1 flex flex-col gap-2">
+          <button (click)="criarVistoria()" class="w-full bg-sky-700 hover:bg-sky-800 text-white font-bold py-3 rounded-xl text-sm transition-colors shadow-md active:scale-95">
+            Gerar Prancheta e Iniciar Vistoria
+          </button>
+          @if (novoLat()) {
+            <p class="text-xs text-green-700 text-center">
+              📍 GPS capturado: {{ novoLat()?.toFixed(5) }}, {{ novoLng()?.toFixed(5) }}
+              @if (novoGpsAccuracy()) { · ±{{ novoGpsAccuracy()! | number:'1.0-0' }} m }
+            </p>
+          } @else {
+            <p class="text-xs text-slate-400 text-center">GPS aguardando sinal… (capturado automaticamente em campo)</p>
+          }
+        </div>
       </div>
     </div>
   }

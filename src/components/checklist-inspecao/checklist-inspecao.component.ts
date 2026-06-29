@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DataService } from '../../services/data.service';
+import { DataService, NormaRef } from '../../services/data.service';
 import { ToastService } from '../../services/toast.service';
 import { UserProfile } from '../../models/user-profile.model';
 import { registroValido, generateStandardFooter, GeminiService } from '../../services/gemini.service';
@@ -28,6 +28,10 @@ export interface Vistoria {
   address: string;
   areaConstruida?: string;
   idadeEdificacao?: string;
+  lat?: number;
+  lng?: number;
+  gpsAccuracy?: number;
+  objetoNatureza?: string;
   dateCreated: string;
   dateUpdated: string;
   progress: number;
@@ -123,6 +127,10 @@ export class ChecklistInspecaoComponent implements OnInit {
   novoAddress = signal('');
   novaAreaConstruida = signal('');
   novaIdadeEdificacao = signal('');
+  novoObjetoNatureza = signal('');
+  novoLat = signal<number | null>(null);
+  novoLng = signal<number | null>(null);
+  novoGpsAccuracy = signal<number | null>(null);
   selecaoSistemas = signal<{ [key: string]: boolean }>({}); // chave: "systemKey-typologyTitle"
 
   // Filtros de visualização
@@ -297,8 +305,24 @@ export class ChecklistInspecaoComponent implements OnInit {
     this.novoAddress.set('');
     this.novaAreaConstruida.set('');
     this.novaIdadeEdificacao.set('');
+    this.novoObjetoNatureza.set('');
+    this.novoLat.set(null);
+    this.novoLng.set(null);
+    this.novoGpsAccuracy.set(null);
     this.selecaoSistemas.set({});
     this.modoExibicao.set('CRIACAO');
+    // Captura GPS em background — pronto antes de o RT terminar de preencher o formulário
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          this.novoLat.set(pos.coords.latitude);
+          this.novoLng.set(pos.coords.longitude);
+          this.novoGpsAccuracy.set(pos.coords.accuracy ?? null);
+        },
+        () => { /* GPS indisponível — campos ficam null */ },
+        { timeout: 10000, maximumAge: 30000 }
+      );
+    }
   }
 
   cancelarCriacao(): void {
@@ -398,6 +422,10 @@ export class ChecklistInspecaoComponent implements OnInit {
       address: address,
       areaConstruida: this.novaAreaConstruida().trim() || undefined,
       idadeEdificacao: this.novaIdadeEdificacao().trim() || undefined,
+      lat: this.novoLat() ?? undefined,
+      lng: this.novoLng() ?? undefined,
+      gpsAccuracy: this.novoGpsAccuracy() ?? undefined,
+      objetoNatureza: this.novoObjetoNatureza().trim() || undefined,
       dateCreated: new Date().toISOString(),
       dateUpdated: new Date().toISOString(),
       progress: 0,
@@ -1204,6 +1232,56 @@ Com base na imagem e no contexto do item falho, forneça:
             <tr><td>Última atualização</td><td>${new Date(ativa.dateUpdated).toLocaleString('pt-BR')}</td></tr>
           </table>
 
+          <!-- SEÇÃO 2 — Objeto e Natureza -->
+          <h2 class="sec-h"><span class="sn">2.</span> Objeto e Natureza da Inspeção</h2>
+          <p style="font-size:9pt;line-height:1.7;text-align:justify;margin-bottom:4mm;">
+            O presente Relatório Técnico de Inspeção Predial e Avaliação (RTIPA) tem por objeto a edificação denominada
+            <strong>${form.buildingName}</strong>, localizada em <strong>${form.address}</strong>,
+            conforme identificação e caracterização constantes das seções subsequentes.
+            A inspeção foi realizada por profissional habilitado (${profile.fullName} — ${profile.professionalId || 'CAU/CREA'}),
+            com emissão de Registro de Responsabilidade Técnica (RRT/ART), em conformidade com a ABNT NBR 16747:2020.
+            ${ativa.objetoNatureza ? `<br><br>${ativa.objetoNatureza}` : ''}
+          </p>
+
+          <!-- SEÇÃO 3 — Objetivo, Metodologia e Normas -->
+          <h2 class="sec-h"><span class="sn">3.</span> Objetivo, Metodologia e Normas Técnicas</h2>
+          <p style="font-size:9pt;line-height:1.7;text-align:justify;margin-bottom:4mm;">
+            A inspeção tem por objetivo avaliar as condições técnicas de conservação, desempenho, segurança e
+            manutenção da edificação, com classificação das anomalias segundo critérios de grau de risco
+            (Mínimo, Regular e Crítico), em conformidade com a ABNT NBR 16747:2020.
+            A metodologia adotada compreende inspeção visual sistêmica, registro fotográfico georreferenciado,
+            análise por inteligência artificial (diagnóstico assistido) e emissão de relatório técnico estruturado
+            por sistemas e tipologias prediais.
+          </p>
+          ${(() => {
+            const sistemasUsados = [...new Set(ativa.items.map((i: any) => i.systemTitle))];
+            const normas = this.dataService.getNormasParaRTIPA(sistemasUsados);
+            let html = '';
+            // Normas transversais
+            html += `<p style="font-size:8.5pt;font-weight:600;color:#132A41;margin:3mm 0 1mm;">Normas transversais (todos os sistemas):</p>`;
+            html += `<table style="width:100%;border-collapse:collapse;font-size:8pt;margin-bottom:4mm;">`;
+            html += `<thead><tr style="background:#132A41;color:#fff;"><th style="padding:2mm 3mm;text-align:left;width:30%">Norma</th><th style="padding:2mm 3mm;text-align:left">Título e Aplicação</th></tr></thead><tbody>`;
+            normas.transversais.forEach((n: NormaRef, idx: number) => {
+              const bg = idx % 2 === 0 ? '#fff' : '#F7F5F0';
+              html += `<tr style="background:${bg};"><td style="padding:2mm 3mm;font-weight:600;color:#B5642A;vertical-align:top;">${n.codigo}</td><td style="padding:2mm 3mm;vertical-align:top;">${n.titulo}</td></tr>`;
+            });
+            html += `</tbody></table>`;
+            // Normas por sistema
+            if (normas.porSistema.length > 0) {
+              html += `<p style="font-size:8.5pt;font-weight:600;color:#132A41;margin:3mm 0 1mm;">Normas específicas dos sistemas inspecionados:</p>`;
+              html += `<table style="width:100%;border-collapse:collapse;font-size:8pt;margin-bottom:4mm;">`;
+              html += `<thead><tr style="background:#132A41;color:#fff;"><th style="padding:2mm 3mm;text-align:left;width:22%">Norma</th><th style="padding:2mm 3mm;text-align:left;width:35%">Título</th><th style="padding:2mm 3mm;text-align:left">Sistema / Aplicação</th></tr></thead><tbody>`;
+              normas.porSistema.forEach((s: any) => {
+                s.normasSistema.forEach((n: NormaRef, idx: number) => {
+                  const bg = idx % 2 === 0 ? '#fff' : '#F7F5F0';
+                  html += `<tr style="background:${bg};"><td style="padding:2mm 3mm;font-weight:600;color:#B5642A;vertical-align:top;">${n.codigo}</td><td style="padding:2mm 3mm;vertical-align:top;">${n.titulo}</td><td style="padding:2mm 3mm;vertical-align:top;color:#4A5A66;">${s.titulo} — ${n.aplicacao}</td></tr>`;
+                });
+              });
+              html += `</tbody></table>`;
+            }
+            return html;
+          })()}
+
           <!-- SEÇÃO 4 — Caracterização da Edificação -->
           <h2 class="sec-h"><span class="sn">4.</span> Caracterização da Edificação</h2>
           <table class="t-ident">
@@ -1211,9 +1289,11 @@ Com base na imagem e no contexto do item falho, forneça:
             <tr><td>Endereço</td><td>${ativa.address}</td></tr>
             ${ativa.areaConstruida ? `<tr><td>Área Construída</td><td>${ativa.areaConstruida}</td></tr>` : ''}
             ${ativa.idadeEdificacao ? `<tr><td>Idade da Edificação</td><td>${ativa.idadeEdificacao}</td></tr>` : ''}
+            ${(ativa.lat && ativa.lng) ? `<tr><td>Coordenadas GPS</td><td>${ativa.lat.toFixed(6)}, ${ativa.lng.toFixed(6)}${ativa.gpsAccuracy ? ` · precisão ±${Math.round(ativa.gpsAccuracy)} m` : ''}</td></tr>` : ''}
+            ${(ativa.lat && ativa.lng) ? `<tr><td>Localização</td><td><a href="https://www.openstreetmap.org/?mlat=${ativa.lat}&mlon=${ativa.lng}&zoom=17" style="color:#185fa5;">Ver no mapa (OpenStreetMap)</a></td></tr>` : ''}
           </table>
           <p style="font-size:8pt;color:#6B7280;font-style:italic;margin-bottom:6mm;">
-            Nota: O mapa de localização georreferenciado será incorporado na versão completa do RTIPA (Fase A3 — pendente).
+            ${(ativa.lat && ativa.lng) ? `Georreferenciamento capturado automaticamente no dispositivo de campo (precisão GPS do smartphone). Imagem cartográfica detalhada disponível via link acima.` : `Nota: Coordenadas GPS não capturadas nesta vistoria. Abrir o formulário de nova vistoria em campo para captura automática.`}
           </p>
 
           <!-- SEÇÃO 5 — Síntese -->

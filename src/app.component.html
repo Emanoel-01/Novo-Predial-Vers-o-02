@@ -205,7 +205,7 @@
         <h4 class="text-xl font-black mt-2">
           @if (tourStep() === 1) { 🚀 Passo 1 de 4: Visão Geral }
           @else if (tourStep() === 2) { 🏗️ Passo 2 de 4: Sistemas de Campo }
-          @else if (tourStep() === 3) { 📋 Passo 3 de 4: Checklist de Campo }
+          @else if (tourStep() === 3) { 📋 Passo 3 de 4: Vistoria RTIPA }
           @else if (tourStep() === 4) { 🤖 Passo 4 de 4: Assistentes com IA }
         </h4>
         <button (click)="isTourActive.set(false)" class="absolute top-6 right-6 text-slate-300 hover:text-white">
@@ -225,7 +225,7 @@
           </p>
         } @else if (tourStep() === 3) {
           <p class="text-slate-600 text-sm leading-relaxed">
-            Abra o <strong>Checklist de Campo</strong> para iniciar uma vistoria física no edifício em tempo real. Marque tarefas como concluídas, salve o progresso de vistorias localmente para acompanhamento sem internet e mantenha o controle de tudo.
+            Abra a <strong>Vistoria RTIPA</strong> para iniciar uma inspeção predial no edifício em tempo real. Registre conformidades, fotografias com GPS e anotações técnicas — salvas localmente para uso sem internet.
           </p>
         } @else if (tourStep() === 4) {
           <p class="text-slate-600 text-sm leading-relaxed">
@@ -311,12 +311,12 @@
           <h5 class="text-xs font-bold text-rose-500 uppercase tracking-wider">Ações Críticas</h5>
           <div class="bg-rose-50/50 p-4 rounded-2xl border border-rose-100 space-y-2">
             <p class="text-xs text-rose-800 leading-normal">
-              Esta ação removerá todas as tarefas concluídas, anomalias marcadas e estados salvos localmente do Checklist de Campo.
+              Esta ação removerá todas as vistorias RTIPA, registros de conformidade e evidências salvas localmente neste dispositivo.
             </p>
             <button 
               (click)="resetLocalState()"
               class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-colors duration-200 cursor-pointer">
-              Limpar Progresso do Checklist
+              Limpar Vistorias Locais
             </button>
           </div>
         </div>
