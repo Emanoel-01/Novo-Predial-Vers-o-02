@@ -19,6 +19,7 @@ export interface ChecklistItem {
   notes: string;
   id_evidencias?: string[];   // chaves das fotos no store 'evidencias'
   diagnostico_ia?: string;    // texto do diagnóstico gerado pela IA
+  quantitativo?: string;      // medição/quantitativo verificado em campo pelo RT
 }
 
 export interface Vistoria {
@@ -715,6 +716,22 @@ Com base na imagem e no contexto do item falho, forneça:
     const novosItens = ativa.items.map(item => {
       if (item.id === itemId) {
         return { ...item, notes: valor };
+      }
+      return item;
+    });
+
+    this.atualizarItensVistoriaAtiva(novosItens, true);
+  }
+
+  atualizarQuantitativoItem(itemId: string, event: Event): void {
+    const ativa = this.vistoriaAtiva();
+    if (!ativa) return;
+
+    const valor = ((event.target as HTMLInputElement).value || '').trim();
+
+    const novosItens = ativa.items.map(item => {
+      if (item.id === itemId) {
+        return { ...item, quantitativo: valor };
       }
       return item;
     });

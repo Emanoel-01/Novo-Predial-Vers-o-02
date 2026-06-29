@@ -491,6 +491,14 @@
                          placeholder="Insira anotações, detalhes da anomalia, localização ou referências de fotos..." 
                          class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 hover:bg-white focus:bg-white transition-all">
                 </div>
+
+                <!-- Campo de Quantitativo verificado em campo -->
+                <div class="mt-2">
+                  <input [value]="item.quantitativo || ''"
+                         (input)="atualizarQuantitativoItem(item.id, $event)"
+                         placeholder="Quantitativo verificado (ex.: 12 m², fissura de 1,5 m, 3 pontos de infiltração)"
+                         class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 hover:bg-white focus:bg-white transition-all">
+                </div>
               </div>
             }
           }
