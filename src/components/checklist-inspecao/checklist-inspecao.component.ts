@@ -808,7 +808,8 @@ Com base na imagem e no contexto do item falho, forneça:
           try {
             const ev = await this.dbService.getEvidencia(evId);
             if (ev?.blob) {
-              const dataUrl = await this.blobParaBase64(ev.blob);
+              const base64 = await this.blobParaBase64(ev.blob);
+              const dataUrl = `data:${ev.mimeType || 'image/jpeg'};base64,${base64}`;
               evidenciasMap.set(evId, {
                 dataUrl,
                 geo: ev.geo ?? null,
@@ -1123,10 +1124,10 @@ Com base na imagem e no contexto do item falho, forneça:
             ${fotoSlotHtml(ev1, 'Foto 1 — Contexto')}
             ${fotoSlotHtml(ev2, 'Foto 2 — Detalhe')}
           </div>`;
-      } else if (isOK) {
-        fotosHtml = `<div class="sem-foto-note">Nenhuma evidência fotográfica registrada para este item.</div>`;
       } else if (isNA) {
         fotosHtml = `<div class="na-aviso">Item não aplicável à tipologia desta edificação.</div>`;
+      } else {
+        fotosHtml = `<div class="sem-foto-note">Nenhuma evidência fotográfica registrada para este item.</div>`;
       }
 
       html += `
