@@ -1214,12 +1214,89 @@ Com base na imagem e no contexto do item falho, forneça:
               background: #fff;
               padding: 20mm;
             }
+            @page {
+              size: A4 portrait;
+              margin: 8mm 20mm 14mm 20mm;
+            }
+            @page {
+              @bottom-right {
+                content: "Pág. " counter(page) " / " counter(pages);
+                font-family: 'Inter', 'Segoe UI', sans-serif;
+                font-size: 7pt;
+                color: #8A949C;
+              }
+            }
             @media print {
-              body { padding: 0; font-size: 9pt; }
-              @page { size: A4 portrait; margin: 20mm 20mm 22mm 20mm; }
+              body { padding: 14mm 0 10mm 0 !important; font-size: 9pt; }
               .no-break { break-inside: avoid; page-break-inside: avoid; }
               tr { page-break-inside: avoid; }
             }
+
+            /* === CABEÇALHO CORRENTE (todas as páginas) === */
+            .running-header {
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              height: 13mm;
+              background: #fff;
+              border-bottom: 2px solid #B5642A;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 0 1mm;
+              z-index: 1000;
+            }
+            .rh-left {
+              display: flex;
+              align-items: center;
+              gap: 3mm;
+              min-width: 40mm;
+            }
+            .rh-brand {
+              font-family: 'Poppins', 'Inter', sans-serif;
+              font-size: 13pt;
+              font-weight: 700;
+              color: #132A41;
+              letter-spacing: -.02em;
+              white-space: nowrap;
+            }
+            .rh-brand span { color: #B5642A; }
+            .rh-right {
+              text-align: right;
+              font-size: 7.5pt;
+              color: #4A5A66;
+              line-height: 1.45;
+            }
+            .rh-rt { font-weight: 700; color: #132A41; display: block; }
+            .rh-company { color: #6B7280; display: block; }
+
+            /* === RODAPÉ CORRENTE (todas as páginas) === */
+            .running-footer {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              height: 9mm;
+              background: #fff;
+              border-top: 1px solid #D8D0C6;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 0 1mm;
+              font-size: 7.5pt;
+              z-index: 1000;
+            }
+            .rf-doc {
+              font-weight: 600;
+              color: #132A41;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              max-width: 55%;
+            }
+            .rf-prov { color: #B5642A; font-size: 7pt; font-weight: 600; }
+            .rf-date { color: #8A949C; white-space: nowrap; }
 
             /* === FONTES: carregadas no início do <style> === */
 
@@ -1230,29 +1307,8 @@ Com base na imagem e no contexto do item falho, forneça:
               border-bottom: 3px solid #B5642A;
               margin-bottom: 8mm;
             }
-            .capa-timbre {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-start;
-              margin-bottom: 5mm;
-            }
-            .capa-logo {
-              font-family: 'Poppins', 'Inter', sans-serif;
-              font-size: 18pt;
-              font-weight: 700;
-              color: #132A41;
-              letter-spacing: -.02em;
-            }
-            .capa-logo span { color: #B5642A; }
-            .capa-empresa {
-              text-align: right;
-              font-size: 8pt;
-              color: #4A5A66;
-              line-height: 1.7;
-            }
-            .capa-empresa b { color: #1A2A38; }
             .capa-titulo {
-              padding: 14mm 0 10mm 0;
+              padding: 4mm 0 10mm 0;
             }
             .capa-titulo h1 {
               font-family: 'Poppins', 'Inter', sans-serif;
@@ -1472,20 +1528,29 @@ Com base na imagem e no contexto do item falho, forneça:
           </style>
       </head>
       <body>
+          <!-- CABEÇALHO CORRENTE — aparece em todas as páginas -->
+          <div class="running-header">
+            <div class="rh-left">
+              ${profile.companyLogoBase64
+                ? `<img src="${profile.companyLogoBase64}" alt="${profile.companyName || 'Logo'}" style="max-height:10mm;max-width:50mm;object-fit:contain;">`
+                : `<span class="rh-brand">${profile.companyName || 'Amorim<span>Tech</span>'}</span>`
+              }
+            </div>
+            <div class="rh-right">
+              <span class="rh-rt">${profile.fullName} — ${profile.professionalId || ''}</span>
+              <span class="rh-company">${profile.companyName || ''}${profile.companyCnpj ? ` · CNPJ: ${profile.companyCnpj}` : ''}</span>
+            </div>
+          </div>
+
+          <!-- RODAPÉ CORRENTE — aparece em todas as páginas -->
+          <div class="running-footer">
+            <span class="rf-doc">RTIPA — ${form.buildingName.length > 45 ? form.buildingName.slice(0, 42) + '…' : form.buildingName}</span>
+            <span class="rf-prov">⚠ Documento Provisório</span>
+            <span class="rf-date">${new Date(ativa.dateCreated).toLocaleDateString('pt-BR')}</span>
+          </div>
+
           <!-- CAPA P4 -->
           <div class="capa">
-            <div class="capa-timbre">
-            ${profile.companyLogoBase64
-              ? `<img src="${profile.companyLogoBase64}" alt="${profile.companyName || 'Logo'}" style="max-height:16mm;max-width:70mm;object-fit:contain;display:block;">`
-              : `<div class="capa-logo">${profile.companyName || 'Amorim<span style=\'color:#B5642A\'>Tech</span>'}</div>`
-            }
-              <div class="capa-empresa">
-                <b>${profile.companyName || 'AmorimTech'}</b><br>
-                ${profile.companyCnpj ? `CNPJ: ${profile.companyCnpj}<br>` : ''}
-                ${profile.companyAddress ? `${profile.companyAddress}<br>` : ''}
-                ${profile.fullName} — ${profile.professionalId || ''}
-              </div>
-            </div>
             <div class="capa-titulo">
               <h1>Relatório Técnico de Inspeção<br>Predial e Avaliação — RTIPA</h1>
               <div class="sub">${form.buildingName}</div>
@@ -1810,6 +1875,51 @@ Com base na imagem e no contexto do item falho, forneça:
     const h3Style = 'font-size:9pt;font-weight:800;color:#132A41;padding:1mm 0 1.5mm 3mm;margin:4mm 0 2mm;border-left:3px solid #B5642A;letter-spacing:.02em;border-bottom:1px solid #D8D0C6;';
     const liStyle = 'margin-bottom:1.5mm;color:#2b2b2b;line-height:1.55;';
     const ulStyle = 'margin:1.5mm 0 2.5mm 4mm;padding-left:4mm;list-style:disc;';
+
+    // 0) Pré-processar tabelas Markdown (| col | col |) → <table> HTML
+    const processarTabelasMd = (src: string): string => {
+      const linhas = src.split('\n');
+      const out: string[] = [];
+      let bloco: string[] = [];
+
+      const thS = 'background:#132A41;color:#fff;padding:1.5mm 3mm;font-size:7.5pt;font-weight:700;text-align:left;border:1px solid #0d1f2f;';
+      const tdS = 'padding:1.5mm 3mm;font-size:8pt;border:1px solid #D8D0C6;vertical-align:top;';
+      const td1S = 'padding:1.5mm 3mm;font-size:8pt;border:1px solid #D8D0C6;vertical-align:top;width:22%;font-weight:600;color:#B5642A;';
+
+      const flush = () => {
+        if (!bloco.length) return;
+        // remove linha separadora (|---|---|)
+        const rows = bloco.filter(l => !/^\|[\s\-:|]+\|/.test(l));
+        let t = `<table style="width:100%;border-collapse:collapse;margin:3mm 0 4mm;font-size:8pt;page-break-inside:avoid;">`;
+        rows.forEach((row, ri) => {
+          const cells = row.split('|')
+            .slice(1, -1)           // remove primeiro e último vazios
+            .map(c => c.trim());
+          if (ri === 0) {
+            t += `<thead><tr>${cells.map(c => `<th style="${thS}">${c}</th>`).join('')}</tr></thead><tbody>`;
+          } else {
+            const bg = ri % 2 === 0 ? '' : 'background:#F7F5F0;';
+            t += `<tr style="${bg}">${cells.map((c, ci) => `<td style="${ci === 0 ? td1S : tdS}">${c}</td>`).join('')}</tr>`;
+          }
+        });
+        t += `</tbody></table>`;
+        out.push(t);
+        bloco = [];
+      };
+
+      for (const linha of linhas) {
+        if (linha.trim().startsWith('|')) {
+          bloco.push(linha);
+        } else {
+          flush();
+          out.push(linha);
+        }
+      }
+      flush();
+      return out.join('\n');
+    };
+
+    text = processarTabelasMd(text);
 
     let html = text
       // 1) Títulos de bloco: linha inteira que é **N. TEXTO** → heading de seção
