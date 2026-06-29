@@ -1418,6 +1418,9 @@ Com base na imagem e no contexto do item falho, forneça:
           <!-- SEÇÃO 7 — Relatório Fotográfico -->
           ${secao7}
 
+          <!-- SEÇÃO 9 — Plano de Ação e Memorial Descritivo -->
+          ${secao9}
+
           <!-- RODAPÉ P4 -->
           <div class="doc-footer">
             <span class="prov-tag">PROVISÓRIO</span>
