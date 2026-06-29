@@ -500,10 +500,20 @@
 
                 <!-- Campo de Anotações rápidas de campo -->
                 <div class="mt-3">
-                  <input [value]="item.notes" 
+                  <input #notesInput
+                         [value]="item.notes" 
                          (input)="atualizarNotasItem(item.id, $event)" 
+                         maxlength="500"
                          placeholder="Anote o que observou — sempre, mesmo em itens Conformes ou N/A (a IA usará isto no laudo)..." 
                          class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 hover:bg-white focus:bg-white transition-all">
+                  <div class="flex justify-end mt-0.5">
+                    <span class="text-[10px] tabular-nums"
+                          [class.text-slate-400]="notesInput.value.length < 400"
+                          [class.text-amber-500]="notesInput.value.length >= 400 && notesInput.value.length < 480"
+                          [class.text-red-500]="notesInput.value.length >= 480">
+                      {{ notesInput.value.length }}/500
+                    </span>
+                  </div>
                 </div>
 
                 <!-- Campo de Quantitativo verificado em campo -->
