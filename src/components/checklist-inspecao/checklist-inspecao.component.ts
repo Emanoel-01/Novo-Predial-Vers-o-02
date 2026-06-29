@@ -839,27 +839,27 @@ Com base na imagem e no contexto do item falho, forneça:
     let itemsHtml = '';
     Object.entries(itensPorSistema).forEach(([sistema, itens]) => {
       itemsHtml += `
-        <tr>
-          <th colspan="4" class="system-header-row">${sistema}</th>
+        <tr class="sistema-row">
+          <th colspan="4">${sistema}</th>
         </tr>
       `;
       itens.forEach(item => {
-        let statusBadge = '';
+        let badgeClass = 'badge-status-pend';
+        let badgeText = 'PENDENTE';
         if (item.status === 'PASS' || item.status === 'CONFORME') {
-          statusBadge = '<span class="badge badge-success">PASS (Aprovado)</span>';
+          badgeClass = 'badge-status-ok'; badgeText = 'PASS (APROVADO)';
         } else if (item.status === 'FAIL' || item.status === 'NAO_CONFORME') {
-          statusBadge = `<span class="badge badge-danger">FAIL (Falha - ${item.severity || 'Regular'})</span>`;
+          badgeClass = 'badge-status-nc';
+          badgeText = `FAIL (FALHA${item.severity ? ' - ' + item.severity.toUpperCase() : ''})`;
         } else if (item.status === 'NA' || item.status === 'NAO_APLICAVEL') {
-          statusBadge = '<span class="badge badge-gray">N/A (Não Aplicável)</span>';
-        } else {
-          statusBadge = '<span class="badge badge-pending">PENDENTE</span>';
+          badgeClass = 'badge-status-na'; badgeText = 'N/A (NÃO APLICÁVEL)';
         }
 
         itemsHtml += `
           <tr>
             <td style="font-size: 0.85em;"><strong>${item.typologyTitle}</strong><br><span style="color: #666;">${item.title}</span></td>
             <td style="font-size: 0.8em; color: #555;">${item.description}</td>
-            <td style="text-align: center;">${statusBadge}</td>
+            <td style="text-align: center;"><span class="${badgeClass}">${badgeText}</span></td>
             <td style="font-size: 0.8em; max-width: 150px; word-wrap: break-word;">${item.notes || '<em>Nenhuma anotação.</em>'}</td>
           </tr>
         `;
@@ -882,134 +882,358 @@ Com base na imagem e no contexto do item falho, forneça:
           <meta charset="utf-8">
           <title>Relatório de Vistoria de Campo - ${form.buildingName}</title>
           <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 40px; color: #333; line-height: 1.5; font-size: 10pt; }
-              .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #0c4a6e; padding-bottom: 20px; }
-              .header h1 { color: #0c4a6e; margin: 0; font-size: 1.8em; font-weight: bold; }
-              .header p { color: #555; margin: 5px 0; font-size: 1.1em; }
-              
-              .stats-container { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 25px; }
-              .stat-box { flex: 1; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; text-align: center; background-color: #f8fafc; }
-              .stat-box .num { font-size: 1.5em; font-weight: bold; color: #0c4a6e; margin-bottom: 2px; }
-              .stat-box .lbl { font-size: 0.75em; text-transform: uppercase; color: #64748b; font-weight: 600; }
-              
-              .info-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
-              .info-table td { border: 1px solid #e2e8f0; padding: 8px; vertical-align: middle; }
-              .info-table td.label { font-weight: bold; background-color: #f1f5f9; width: 22%; color: #1e293b; }
-              
-              h2 { color: #0c4a6e; margin-top: 25px; margin-bottom: 10px; border-bottom: 1.5px solid #0c4a6e; padding-bottom: 5px; font-size: 1.3em; }
-              
-              .checklist-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85em; }
-              .checklist-table tr { page-break-inside: avoid; }
-              .checklist-table thead { display: table-header-group; }
-              .checklist-table th, .checklist-table td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; vertical-align: top; }
-              .checklist-table thead th { background-color: #0c4a6e; color: white; font-weight: bold; font-size: 0.95em; }
-              
-              .system-header-row { background-color: #e2e8f0 !important; color: #0f172a !important; text-align: left; font-weight: bold !important; font-size: 1.05em !important; padding: 8px 12px !important; }
-              .checklist-table tbody tr:nth-child(even):not(:has(.system-header-row)) { background-color: #f8fafc; }
-              
-              .badge { display: inline-block; padding: 3px 6px; font-size: 0.75em; font-weight: bold; border-radius: 4px; text-align: center; white-space: nowrap; }
-              .badge-success { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-              .badge-danger { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-              .badge-gray { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-              .badge-pending { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+            /* === TOKENS P4 === */
+            :root {
+              --p4-navy:    #132A41;
+              --p4-copper:  #B5642A;
+              --p4-copper-l:#E8B27E;
+              --p4-bg:      #FFFFFF;
+              --p4-ink:     #1A2A38;
+              --p4-soft:    #4A5A66;
+              --p4-faint:   #8A949C;
+              --p4-rule:    #D8D0C6;
+              --p4-green:   #2E7D5B;
+              --p4-green-l: #E8F5EE;
+              --p4-red:     #C75D45;
+              --p4-red-l:   #FDECEA;
+              --p4-blue:    #2C5AA0;
+              --p4-blue-l:  #EBF0FA;
+              --p4-amber:   #E07B39;
+              --p4-amber-l: #FDF0E6;
+              --p4-pend-l:  #F5F2EC;
+            }
 
-              .disclaimer { background-color: #fef3c7; padding: 12px; border-radius: 6px; margin-top: 30px; border-left: 4px solid #f59e0b; font-size: 0.85em; }
-              @media print { body { margin: 20px; font-size: 9pt; } }
-
-              /* === SEÇÃO 7 — Relatório Fotográfico (Fase 1.3-B) === */
-              .sec-h { color: #0c4a6e; margin-top: 25px; margin-bottom: 10px; border-bottom: 1.5px solid #0c4a6e; padding-bottom: 5px; font-size: 1.3em; }
-              .sn { margin-right: 5px; }
-              .nc-card { break-inside: avoid; border: 1px solid #B0BEC5; border-radius: 3px; margin: 5mm 0; overflow: hidden; }
-              .nc-header { background: #132A41; color: #fff; padding: 2.5mm 3.5mm; display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; }
-              .nc-id { font-size: 9.5pt; font-weight: 700; background: rgba(255,255,255,.15); border-radius: 2px; padding: .5mm 2mm; white-space: nowrap; flex-shrink: 0; }
-              .nc-chips { flex: 1; display: flex; gap: 2mm; flex-wrap: wrap; }
-              .nc-chips .chip { background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
-              .chip { display: inline-block; font-size: 6.5pt; font-family: monospace; font-weight: 600; padding: .5mm 2mm; border-radius: 2px; letter-spacing: .04em; }
-              .nc-status-badge { flex-shrink: 0; }
-              .nc-status-badge.nc { background: #FDECEA; color: #C75D45; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; }
-              .nc-status-badge.ok { background: #E8F5EE; color: #2E7D5B; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; }
-              .nc-status-badge.na { background: #F5F2EC; color: #4A5A66; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; }
-              .nc-title-row { background: #F4F6F8; padding: 2.5mm 3.5mm; border-bottom: 1px solid #D8D0C6; font-size: 10pt; font-weight: 600; color: #132A41; }
-              .nc-fotos-grid { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #D8D0C6; }
-              .nc-foto-item { padding: 3mm; border-right: 1px solid #D8D0C6; }
-              .nc-foto-item:last-child { border-right: none; }
-              .sec-lbl { font-size: 7pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #4A5A66; display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm; }
-              .nc-foto-slot { width: 100%; aspect-ratio: 4/3; background: #ECEFF1; border: 1px dashed #D8D0C6; border-radius: 2px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 2mm; }
-              .nc-foto-slot img { width: 100%; height: 100%; object-fit: contain; background: #ECEFF1; }
-              .nc-geo { font-family: monospace; font-size: 6.5pt; color: #4A5A66; line-height: 1.6; }
-              .nc-diag-full { padding: 3mm; border-bottom: 1px solid #D8D0C6; font-size: 8.5pt; line-height: 1.55; }
-              .nc-notes { padding: 3mm; border-bottom: 1px solid #D8D0C6; background: #FAFAFA; font-size: 8.5pt; }
-              .nc-notes .aviso { font-size: 6.5pt; color: #8A949C; font-style: italic; margin-top: 2mm; }
-              .nc-quant { padding: 2.5mm 3mm; background: #F7F5F0; font-size: 8.5pt; display: flex; align-items: center; gap: 3mm; }
-              .nc-quant .ql { font-size: 7pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #4A5A66; }
-              .nc-quant .qv { font-weight: 700; color: #1A2A38; }
-              .badge { display: inline-block; font-size: 6pt; font-weight: 700; padding: .5mm 1.5mm; border-radius: 2px; letter-spacing: .06em; text-transform: uppercase; vertical-align: middle; margin-left: 1mm; }
-              .badge-humano  { background: #2C5AA0; color: #fff; }
-              .badge-maquina { background: #2E7D5B; color: #fff; }
-              .badge-sensor  { background: #E07B39; color: #fff; }
-              .sem-foto-note { padding: 3mm; background: #E8F5EE; border-bottom: 1px solid #D8D0C6; font-size: 7.5pt; color: #2E7D5B; font-style: italic; }
-              .na-aviso { padding: 3mm; background: #F5F2EC; border-bottom: 1px solid #D8D0C6; font-size: 7.5pt; color: #4A5A66; font-style: italic; }
+            /* === BASE === */
+            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+              font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+              font-size: 9.5pt;
+              line-height: 1.5;
+              color: #1A2A38;
+              background: #fff;
+              padding: 20mm;
+            }
+            @media print {
+              body { padding: 0; font-size: 9pt; }
+              @page { size: A4 portrait; margin: 20mm 20mm 22mm 20mm; }
               .no-break { break-inside: avoid; page-break-inside: avoid; }
+              tr { page-break-inside: avoid; }
+            }
+
+            /* === FONTES === */
+            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght=500;600;700&family=Inter:wght=400;500;600;700&display=swap');
+
+            /* === CAPA === */
+            .capa {
+              page-break-after: always;
+              padding-bottom: 10mm;
+              border-bottom: 3px solid #B5642A;
+              margin-bottom: 8mm;
+            }
+            .capa-timbre {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              margin-bottom: 5mm;
+            }
+            .capa-logo {
+              font-family: 'Poppins', 'Inter', sans-serif;
+              font-size: 18pt;
+              font-weight: 700;
+              color: #132A41;
+              letter-spacing: -.02em;
+            }
+            .capa-logo span { color: #B5642A; }
+            .capa-empresa {
+              text-align: right;
+              font-size: 8pt;
+              color: #4A5A66;
+              line-height: 1.7;
+            }
+            .capa-empresa b { color: #1A2A38; }
+            .capa-titulo {
+              padding: 14mm 0 10mm 0;
+            }
+            .capa-titulo h1 {
+              font-family: 'Poppins', 'Inter', sans-serif;
+              font-size: 22pt;
+              font-weight: 700;
+              color: #132A41;
+              line-height: 1.15;
+              letter-spacing: -.02em;
+              margin-bottom: 2mm;
+            }
+            .capa-titulo .sub {
+              font-size: 11pt;
+              color: #B5642A;
+              font-weight: 500;
+            }
+            .capa-meta {
+              border-top: 1px solid #D8D0C6;
+              padding-top: 5mm;
+              font-size: 9pt;
+              line-height: 2;
+            }
+            .capa-meta b { font-weight: 600; color: #1A2A38; }
+            .prov-banner {
+              margin-top: 8mm;
+              background: #FDECEA;
+              border: 1px solid #C75D45;
+              border-radius: 3px;
+              padding: 4mm 6mm;
+              font-size: 8pt;
+              color: #C75D45;
+              font-weight: 600;
+            }
+
+            /* === HEADING DE SEÇÃO === */
+            .sec-h {
+              display: flex;
+              align-items: baseline;
+              gap: 5px;
+              font-family: 'Poppins', 'Inter', sans-serif;
+              font-size: 13pt;
+              font-weight: 700;
+              color: #132A41;
+              border-bottom: 2px solid #B5642A;
+              padding-bottom: 3px;
+              margin: 8mm 0 5mm 0;
+            }
+            .sec-h .sn { color: #B5642A; }
+
+            /* === SEÇÃO 1 — Tabela de Identificação === */
+            table.t-ident {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 4mm;
+            }
+            table.t-ident td {
+              border: 1px solid #D8D0C6;
+              padding: 2.5mm 4mm;
+              font-size: 9pt;
+              vertical-align: top;
+            }
+            table.t-ident td:first-child {
+              width: 40mm;
+              font-weight: 600;
+              color: #4A5A66;
+              background: #F7F5F0;
+              white-space: nowrap;
+            }
+
+            /* === SEÇÃO 5 — Síntese (KPI cards) === */
+            .sintese-grid {
+              display: grid;
+              grid-template-columns: repeat(6, 1fr);
+              gap: 3mm;
+              margin: 4mm 0;
+            }
+            .sintese-card {
+              border: 1px solid #D8D0C6;
+              border-radius: 2px;
+              padding: 3mm;
+              text-align: center;
+            }
+            .sintese-card .big {
+              font-family: 'Poppins', 'Inter', sans-serif;
+              font-size: 18pt;
+              font-weight: 700;
+              color: #132A41;
+              line-height: 1.1;
+              display: block;
+            }
+            .sintese-card .big.critico { color: #C75D45; }
+            .sintese-card .big.ok      { color: #2E7D5B; }
+            .sintese-card .lbl {
+              font-size: 6.5pt;
+              text-transform: uppercase;
+              letter-spacing: .08em;
+              color: #8A949C;
+              display: block;
+              margin-top: 1mm;
+            }
+
+            /* === SEÇÃO 6 — Tabela de sistemas (zebra striping) === */
+            table.t-std {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 8.5pt;
+              margin: 3mm 0;
+            }
+            table.t-std thead tr { background: #132A41; color: #fff; }
+            table.t-std thead th {
+              padding: 2.5mm 3mm;
+              text-align: left;
+              font-size: 7.5pt;
+              font-weight: 600;
+              letter-spacing: .04em;
+            }
+            table.t-std tbody tr:nth-child(even) { background: #F7F5F0; }
+            table.t-std tbody td {
+              padding: 2mm 3mm;
+              border-bottom: 1px solid #D8D0C6;
+              vertical-align: top;
+            }
+            table.t-std .sistema-row th {
+              background: #E8ECF2;
+              font-weight: 700;
+              color: #132A41;
+              font-size: 9pt;
+              padding: 3mm;
+              text-align: left;
+            }
+            .badge-status-ok  { background: #E8F5EE; color: #2E7D5B; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; display: inline-block; white-space: nowrap; }
+            .badge-status-nc  { background: #FDECEA; color: #C75D45; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; display: inline-block; white-space: nowrap; }
+            .badge-status-na  { background: #F5F2EC; color: #4A5A66; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; display: inline-block; white-space: nowrap; }
+            .badge-status-pend{ background: #FFF8EB; color: #B77D1A; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; display: inline-block; white-space: nowrap; }
+
+            /* === RODAPÉ PROVISÓRIO === */
+            .doc-footer {
+              margin-top: 10mm;
+              border-top: 1px solid #D8D0C6;
+              padding-top: 4mm;
+              font-size: 7pt;
+              color: #8A949C;
+              line-height: 1.6;
+            }
+            .doc-footer .prov-tag {
+              display: inline-block;
+              background: #FDECEA;
+              color: #C75D45;
+              font-weight: 700;
+              padding: .5mm 2mm;
+              border-radius: 2px;
+              font-size: 6.5pt;
+              margin-right: 2mm;
+              text-transform: uppercase;
+            }
+            .chancela-at {
+              margin-top: 6mm;
+              border-top: 1px solid #D8D0C6;
+              padding-top: 4mm;
+              display: flex;
+              align-items: center;
+              gap: 4mm;
+            }
+            .chancela-at .at-logo {
+              font-family: 'Poppins', 'Inter', sans-serif;
+              font-size: 12pt;
+              font-weight: 700;
+              color: #132A41;
+            }
+            .chancela-at .at-logo span { color: #B5642A; }
+            .chancela-at .at-txt { font-size: 7.5pt; color: #8A949C; line-height: 1.6; }
+
+            /* === SEÇÃO 7 (mantida intacta — não alterar estas classes) === */
+            .nc-card { break-inside: avoid; border: 1px solid #B0BEC5; border-radius: 3px; margin: 5mm 0; overflow: hidden; }
+            .nc-header { background: #132A41; color: #fff; padding: 2.5mm 3.5mm; display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; }
+            .nc-id { font-size: 9.5pt; font-weight: 700; background: rgba(255,255,255,.15); border-radius: 2px; padding: .5mm 2mm; white-space: nowrap; flex-shrink: 0; }
+            .nc-chips { flex: 1; display: flex; gap: 2mm; flex-wrap: wrap; }
+            .nc-chips .chip { background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
+            .chip { display: inline-block; font-size: 6.5pt; font-family: monospace; font-weight: 600; padding: .5mm 2mm; border-radius: 2px; letter-spacing: .04em; }
+            .nc-status-badge { flex-shrink: 0; }
+            .nc-status-badge.nc { background: #FDECEA; color: #C75D45; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; }
+            .nc-status-badge.ok { background: #E8F5EE; color: #2E7D5B; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; }
+            .nc-status-badge.na { background: #F5F2EC; color: #4A5A66; font-size: 7.5pt; font-weight: 700; padding: 1mm 2.5mm; border-radius: 2px; }
+            .nc-title-row { background: #F4F6F8; padding: 2.5mm 3.5mm; border-bottom: 1px solid #D8D0C6; font-size: 10pt; font-weight: 600; color: #132A41; }
+            .nc-fotos-grid { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #D8D0C6; }
+            .nc-foto-item { padding: 3mm; border-right: 1px solid #D8D0C6; }
+            .nc-foto-item:last-child { border-right: none; }
+            .sec-lbl { font-size: 7pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #4A5A66; display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm; }
+            .nc-foto-slot { width: 100%; aspect-ratio: 4/3; background: #ECEFF1; border: 1px dashed #D8D0C6; border-radius: 2px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 2mm; }
+            .nc-foto-slot img { width: 100%; height: 100%; object-fit: contain; background: #ECEFF1; }
+            .nc-geo { font-family: monospace; font-size: 6.5pt; color: #4A5A66; line-height: 1.6; }
+            .nc-diag-full { padding: 3mm; border-bottom: 1px solid #D8D0C6; font-size: 8.5pt; line-height: 1.55; }
+            .nc-notes { padding: 3mm; border-bottom: 1px solid #D8D0C6; background: #FAFAFA; font-size: 8.5pt; }
+            .nc-quant { padding: 2.5mm 3mm; background: #F7F5F0; font-size: 8.5pt; display: flex; align-items: center; gap: 3mm; }
+            .nc-quant .ql { font-size: 7pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #4A5A66; }
+            .nc-quant .qv { font-weight: 700; color: #1A2A38; }
+            .badge { display: inline-block; font-size: 6pt; font-weight: 700; padding: .5mm 1.5mm; border-radius: 2px; letter-spacing: .06em; text-transform: uppercase; vertical-align: middle; margin-left: 1mm; }
+            .badge-humano  { background: #2C5AA0; color: #fff; }
+            .badge-maquina { background: #2E7D5B; color: #fff; }
+            .badge-sensor  { background: #E07B39; color: #fff; }
+            .sem-foto-note { padding: 3mm; background: #E8F5EE; border-bottom: 1px solid #D8D0C6; font-size: 7.5pt; color: #2E7D5B; font-style: italic; }
+            .na-aviso { padding: 3mm; background: #F5F2EC; border-bottom: 1px solid #D8D0C6; font-size: 7.5pt; color: #4A5A66; font-style: italic; }
+            .no-break { break-inside: avoid; page-break-inside: avoid; }
           </style>
       </head>
       <body>
-          <div class="header">
-            <h1>Relatório Técnico de Inspeção e Vistoria Predial</h1>
-            <p>Laudo de Campo Interativo - Predial 4.0</p>
+          <!-- CAPA P4 -->
+          <div class="capa">
+            <div class="capa-timbre">
+              <div class="capa-logo">Amorim<span>Tech</span></div>
+              <div class="capa-empresa">
+                <b>${profile.companyName || 'AmorimTech'}</b><br>
+                ${profile.companyCnpj ? `CNPJ: ${profile.companyCnpj}<br>` : ''}
+                ${profile.companyAddress ? `${profile.companyAddress}<br>` : ''}
+                ${profile.fullName} — ${profile.professionalId || ''}
+              </div>
+            </div>
+            <div class="capa-titulo">
+              <h1>Relatório Técnico de Inspeção<br>Predial e Avaliação — RTIPA</h1>
+              <div class="sub">${form.buildingName}</div>
+            </div>
+            <div class="capa-meta">
+              <b>Empreendimento:</b> ${form.buildingName}<br>
+              <b>Endereço:</b> ${form.address}<br>
+              <b>Responsável Técnico:</b> ${profile.fullName} — ${profile.professionalId || ''}<br>
+              <b>Empresa:</b> ${profile.companyName || ''} · CNPJ: ${profile.companyCnpj || ''}<br>
+              <b>Data da vistoria:</b> ${new Date(ativa.dateCreated).toLocaleDateString('pt-BR')}
+            </div>
+            <div class="prov-banner">
+              ⚠ Documento provisório — Adquire validade técnica mediante assinatura do Responsável Técnico (ART/RRT).
+            </div>
           </div>
-          
-          <h2>Informações da Vistoria</h2>
-          <table class="info-table">
-            <tr>
-              <td class="label">Edifício</td>
-              <td><strong>${form.buildingName}</strong></td>
-              <td class="label">Data de Início</td>
-              <td>${new Date(ativa.dateCreated).toLocaleDateString('pt-BR')}</td>
-            </tr>
-            <tr>
-              <td class="label">Endereço</td>
-              <td>${form.address}</td>
-              <td class="label">Última Atualização</td>
-              <td>${new Date(ativa.dateUpdated).toLocaleString('pt-BR')}</td>
-            </tr>
+
+          <!-- SEÇÃO 1 — Identificação -->
+          <h2 class="sec-h"><span class="sn">1.</span> Identificação</h2>
+          <table class="t-ident">
+            <tr><td>Empreendimento</td><td>${form.buildingName}</td></tr>
+            <tr><td>Endereço</td><td>${form.address}</td></tr>
+            <tr><td>Responsável Técnico</td><td>${profile.fullName} — ${profile.professionalId || ''}</td></tr>
+            <tr><td>Empresa / CNPJ</td><td>${profile.companyName || ''} · ${profile.companyCnpj || ''}</td></tr>
+            <tr><td>Data da vistoria</td><td>${new Date(ativa.dateCreated).toLocaleDateString('pt-BR')}</td></tr>
+            <tr><td>Última atualização</td><td>${new Date(ativa.dateUpdated).toLocaleString('pt-BR')}</td></tr>
           </table>
 
-          <h2>Resumo de Campo e Desempenho</h2>
-          <div class="stats-container">
-            <div class="stat-box">
-              <div class="num">${estatisticas.total}</div>
-              <div class="lbl">Itens Totais</div>
+          <!-- SEÇÃO 5 — Síntese -->
+          <h2 class="sec-h"><span class="sn">5.</span> Síntese da Inspeção</h2>
+          <div class="sintese-grid">
+            <div class="sintese-card">
+              <span class="big">${estatisticas.total}</span>
+              <span class="lbl">Itens totais</span>
             </div>
-            <div class="stat-box">
-              <div class="num">${estatisticas.avaliados}</div>
-              <div class="lbl">Inspecionados</div>
+            <div class="sintese-card">
+              <span class="big">${estatisticas.avaliados}</span>
+              <span class="lbl">Inspecionados</span>
             </div>
-            <div class="stat-box" style="background-color: #ecfdf5;">
-              <div class="num" style="color: #059669;">${estatisticas.conformes}</div>
-              <div class="lbl" style="color: #047857;">Conformes (OK)</div>
+            <div class="sintese-card">
+              <span class="big ok">${estatisticas.conformes}</span>
+              <span class="lbl">Conformes</span>
             </div>
-            <div class="stat-box" style="background-color: #fef2f2;">
-              <div class="num" style="color: #dc2626;">${estatisticas.naoConformes}</div>
-              <div class="lbl" style="color: #b91c1c;">Inconformidades (NC)</div>
+            <div class="sintese-card">
+              <span class="big critico">${estatisticas.naoConformes}</span>
+              <span class="lbl">Não conformes</span>
             </div>
-            <div class="stat-box">
-              <div class="num">${estatisticas.percentualConclusao}%</div>
-              <div class="lbl">Conclusão</div>
+            <div class="sintese-card">
+              <span class="big">${estatisticas.percentualConclusao}%</span>
+              <span class="lbl">Conclusão</span>
             </div>
-            <div class="stat-box" style="background-color: #f0fdf4;">
-              <div class="num" style="color: #16a34a;">${estatisticas.taxaConformidade}%</div>
-              <div class="lbl">Conformidade</div>
+            <div class="sintese-card">
+              <span class="big ok">${estatisticas.taxaConformidade}%</span>
+              <span class="lbl">Conformidade</span>
             </div>
           </div>
 
-          <h2>Detalhamento do Checklist por Sistema</h2>
-          <table class="checklist-table">
+          <!-- SEÇÃO 6 — Sistemas inspecionados -->
+          <h2 class="sec-h"><span class="sn">6.</span> Sistemas Inspecionados — Tabela-Resumo</h2>
+          <table class="t-std">
             <thead>
               <tr>
-                <th style="width: 25%;">Tipologia / Item</th>
-                <th style="width: 35%;">Procedimento e Critério de Inspeção</th>
-                <th style="width: 18%; text-align: center;">Status de Campo</th>
-                <th style="width: 22%;">Anotações / Evidências</th>
+                <th style="width:25%">Tipologia / Item</th>
+                <th style="width:35%">Procedimento e Critério de Inspeção</th>
+                <th style="width:18%;text-align:center">Status</th>
+                <th style="width:22%">Anotações</th>
               </tr>
             </thead>
             <tbody>
@@ -1017,13 +1241,22 @@ Com base na imagem e no contexto do item falho, forneça:
             </tbody>
           </table>
 
+          <!-- SEÇÃO 7 — Relatório Fotográfico -->
           ${secao7}
 
-          <div class="disclaimer">
-            <p><strong>Responsabilidade e Limites:</strong> As informações anotadas correspondem aos achados de campo no momento da inspeção. Este documento constitui um rascunho técnico de auxílio e sua validação técnica oficial está condicionada à assinatura do profissional habilitado com o respectivo registro de responsabilidade técnica (ART/RRT).</p>
+          <!-- RODAPÉ P4 -->
+          <div class="doc-footer">
+            <span class="prov-tag">PROVISÓRIO</span>
+            Documento provisório. Adquire validade técnica mediante assinatura do RT (ART/RRT).
+            Emitido por: ${profile.fullName} — ${profile.professionalId || ''} — ${profile.companyName || ''}
           </div>
-
-          ${generateStandardFooter(profile)}
+          <div class="chancela-at">
+            <div class="at-logo">Amorim<span>Tech</span></div>
+            <div class="at-txt">
+              Documento gerado pela plataforma Predial 4.0 · AmorimTech Ecossistema 4.0<br>
+              "O Predial 4.0 dá a ferramenta; o profissional assina; a AmorimTech chancela."
+            </div>
+          </div>
       </body>
       </html>
     `;
