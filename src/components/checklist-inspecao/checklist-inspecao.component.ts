@@ -1223,12 +1223,6 @@ Com base na imagem e no contexto do item falho, forneça:
                 font-size: 7pt;
                 color: #8A949C;
               }
-              @top-right {
-                content: "Pág. " counter(page) " / " counter(pages);
-                font-family: 'Inter', 'Segoe UI', sans-serif;
-                font-size: 7pt;
-                color: #8A949C;
-              }
             }
             @media print {
               body { padding: 14mm 0 8mm 0 !important; font-size: 9pt; }
